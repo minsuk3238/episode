@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스누피가든 야외 도슨트 프리뷰</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pretendard Font for beautiful Korean typography -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #e2e8f0; /* Soft background for desktop */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Mobile App Container Simulation */
+        #app-container {
+            width: 100%;
+            max-width: 414px; /* iPhone Max width */
+            height: 100vh;
+            max-height: 896px;
+            background-color: #f8fafc;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (min-width: 415px) {
+            #app-container {
+                height: 90vh;
+                border-radius: 2rem;
+            }
+        }
+
+        /* Smooth page transitions */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f8fafc;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-hidden-right {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .page-hidden-left {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .page-active {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Story reveal animation */
+        .story-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.8s ease-in-out, opacity 0.6s ease-in-out;
+        }
+
+        .story-content.revealed {
+            max-height: 1000px; /* Arbitrary large number */
+            opacity: 1;
+        }
+
+        /* Custom Scrollbar for story area */
+        .scrollable-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollable-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .scrollable-area::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+
+        /* Pulsing interaction button */
+        @keyframes pulse-soft {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .btn-interact {
+            animation: pulse-soft 2s infinite;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    const tourData = [
+        {
+            id: 1,
+            title: "소설왕 스누피 광장",
+            subtitle: "위대한 작가를 꿈꾸는 시간",
+            emoji: "⌨️",
+            color: "bg-amber-100",
+            text: "어두운 폭풍우 치는 밤이었다(It was a dark and stormy night...)<br><br>어디선가 타자기 소리가 들리시나요? 이곳은 위대한 소설가를 꿈꾸는 스누피의 작업실입니다. 스누피는 개집 지붕 위에 앉아 타자기를 두드리며 매일같이 엄청난 열정으로 소설을 씁니다. 하지만 현실은 냉혹하죠. 출판사로부터 돌아오는 건 항상 \"귀하의 원고를 반려합니다\"라는 정중하고도 단호한 거절 편지들뿐입니다.<br><br>때로는 강아지가 썼다는 이유로, 때로는 내용이 터무니없다는 이유로 매번 거절당하지만 스누피는 절대 타자기를 놓지 않습니다. 수많은 거절 속에서도 굴하지 않고 계속해서 상상의 나래를 펼치는 스누피의 꺾이지 않는 마음을 만나보세요."
+        },
+        {
+            id: 2,
+            title: "비글 스카우트 캠프",
+            subtitle: "좌충우돌 자연 탐험",
+            emoji: "🏕️",
+            color: "bg-green-100",
+            text: "\"자, 대원들! 나를 따르라!\"<br><br>자랑스러운 비글 스카우트의 대장 스누피가 우드스탁과 작은 새 친구들을 이끌고 숲속 탐험에 나섰습니다. 나침반을 거꾸로 보거나, 텐트 하나 제대로 치지 못해 쩔쩔매고, 툭하면 길을 잃어버리는 오합지졸 부대지만 이들의 캠핑은 언제나 즐겁습니다.<br><br>왜냐고요? 모닥불에 노릇노릇하게 구워 먹는 달콤한 마시멜로가 있기 때문이죠! 좌충우돌 자연 탐험 속에서도 낭만을 잃지 않는 비글 스카우트의 캠프에 오신 것을 환영합니다."
+        },
+        {
+            id: 3,
+            title: "피너츠 사색 들판",
+            subtitle: "벽돌 담장 앞의 꼬마 철학자들",
+            emoji: "🧱",
+            color: "bg-orange-100",
+            text: "피너츠 코믹 스트립을 유심히 보셨다면, 아이들이 벽돌 담장에 기대어 서 있는 컷을 자주 보셨을 겁니다. 찰리 브라운과 라이너스는 이곳에서 인생의 무게, 짝사랑의 아픔, 학교생활의 고단함 같은 아주 철학적이고 진지한 고민을 나눕니다.<br><br>그 옆에서는 턱을 괸 마시와 페퍼민트 패티가 엉뚱하지만 예리한 대화를 주고받죠. \"어제는 지나갔고 내일은 알 수 없지만, 오늘은 선물이다.\" 어린아이들이지만 이 담장 앞에서 나누는 대화는 때론 어른들보다 더 깊은 울림과 위로를 줍니다."
+        },
+        {
+            id: 4,
+            title: "찰리 브라운의 야구장",
+            subtitle: "위대한 0점의 행진",
+            emoji: "⚾",
+            color: "bg-yellow-100",
+            text: "이곳은 세계에서 가장 운이 없는 야구팀의 홈구장입니다. 매니저이자 투수인 찰리 브라운은 언제나 비장하게 마운드에 오르지만, 결과는 늘 참담합니다.<br><br>옆에 있는 점수판을 보세요. 상대 팀 점수는 까마득하게 높은데, 찰리 브라운의 팀은 영원한 '0점'입니다. 게다가 저기 보이는 '연 먹는 나무(Kite-Eating Tree)'는 찰리 브라운이 공들여 날리는 연을 족족 집어삼키며 그의 불운에 쐐기를 박죠.<br><br>하지만 찰리 브라운의 진짜 위대한 점은 무엇일까요? 오늘 처참하게 졌어도, 내일 또다시 묵묵히 글러브를 끼고 마운드에 오른다는 것입니다."
+        },
+        {
+            id: 5,
+            title: "피너츠 컬러가든",
+            subtitle: "다채로운 색깔의 사랑 이야기",
+            emoji: "🎨",
+            color: "bg-pink-100",
+            text: "피너츠 친구들의 마음속에는 각자의 색깔을 띤 사랑과 우정의 이야기가 자라고 있습니다.<br><br>라이너스를 '나의 귀여운 바부(Sweet Babboo)'라 부르며 맹목적인 애정을 퍼붓는 <b>샐리의 핑크</b>, 찰리 브라운을 남몰래 짝사랑하는 왈가닥 <b>페퍼민트 패티의 그린</b>, 짝사랑하는 빨간 머리 소녀에게 줄 러브레터를 쥐고 고민하는 <b>찰리 브라운의 옐로우</b>, 그리고 그가 동경하는 <b>빨간 머리 소녀의 레드</b>, 마지막으로 언제나 라이너스에게 평온함을 주는 <b>애착 담요의 블루</b>까지.<br><br>엇갈리기도 하고 서툴기도 한, 다채로운 색깔의 사랑 이야기들이 이곳에 피어나고 있습니다."
+        },
+        {
+            id: 6,
+            title: "스누피 페르소나 암석원",
+            subtitle: "무한한 상상력의 진화",
+            emoji: "🎭",
+            color: "bg-purple-100",
+            text: "스누피는 평범한 강아지로 남기를 거부했습니다. 마스크를 쓴 팔씨름 챔피언 '마스크 마블', 붉은 남작과 공중전을 벌이는 1차 세계대전 '플라잉 에이스', 캠퍼스를 누비는 멋쟁이 대학생 '조 쿨', 최초로 달에 간 '우주비행사', 그리고 늠름한 프랑스 외인부대 '보'까지! 스누피의 상상력은 시공간을 초월합니다.<br><br>이곳에서는 스누피의 무한한 페르소나들뿐만 아니라, 1950년대 네 발로 걷던 평범한 강아지가 60~70년대를 거쳐 직립보행을 하고, 80~90년대 우리가 아는 능글맞은 표정의 스누피로 진화해 온 작화의 역사도 함께 만날 수 있습니다."
+        },
+        {
+            id: 7,
+            title: "루시의 레모네이드 카페",
+            subtitle: "단돈 5센트의 명쾌한 해답",
+            emoji: "🍋",
+            color: "bg-yellow-200",
+            text: "\"심리 상담 해드립니다. 단돈 5센트! (The Doctor is IN)\"<br><br>루시는 작은 부스를 차려놓고 친구들(주로 찰리 브라운)에게 심리 상담을 해줍니다. 화를 내거나 윽박지르는 황당한 돌직구 처방이 대부분이지만, 가끔은 폐부를 찌르는 명쾌한 해답을 주기도 하죠.<br><br>코믹 스트립에서 아이들이 레모네이드 가판대를 운영하던 풋풋한 에피소드들과, 5센트짜리 루시의 호기로운 심리 상담소가 바로 이곳에서 만났습니다. 루시의 명쾌한 잔소리를 듣고 나면 왠지 모르게 복잡했던 머리가 맑아지는 기분이 듭니다."
+        },
+        {
+            id: 8,
+            title: "호박대왕의 호박밭",
+            subtitle: "보이지 않는 것을 믿는 마음",
+            emoji: "🎃",
+            color: "bg-orange-200",
+            text: "모두가 유령 분장을 하고 사탕을 얻으러 가는 왁자지껄한 할로윈 밤. 오직 라이너스만이 캄캄한 호박밭에 남아 '호박대왕(Great Pumpkin)'을 기다립니다. 호박대왕은 가장 진실한 호박밭에 나타나 장난감을 나눠준다고 굳게 믿기 때문이죠.<br><br>샐리는 라이너스를 좋아해서 따라 남았다가 밤새 허탕을 치고 화를 내고, 스누피는 몰래 숨어있다 튀어나와 아이들을 기절초풍하게 놀래킵니다. 매년 호박대왕을 만나지 못하고 실패하면서도, 보이지 않는 것을 향한 라이너스의 순수한 믿음은 절대 꺾이지 않습니다."
+        },
+        {
+            id: 9,
+            title: "라이너스의 담요 숲",
+            subtitle: "가장 완벽한 마음의 안식처",
+            emoji: "🧣",
+            color: "bg-blue-100",
+            text: "라이너스의 한 손에는 언제나 낡은 하늘색 애착 담요가 들려 있습니다. 스누피가 장난치며 뺏어서 도망가기도 하고, 누나 루시가 꼴 보기 싫다며 몰래 땅에 묻어버리기도 하지만, 라이너스에게 이 담요는 절대적인 안정감과 지혜의 원천입니다.<br><br>담요를 얼굴에 비비고 엄지손가락을 빠는 순간, 라이너스는 세상에서 가장 평온한 철학자가 됩니다. 불안한 현대인들에게 '안전 기지'라는 심리학적 개념을 대중화시킨 이 애착 담요의 포근함을 숲 속에서 느껴보세요."
+        },
+        {
+            id: 10,
+            title: "우드스탁의 빅 네스트",
+            subtitle: "내 말을 온전히 알아주는 친구",
+            emoji: "🪹",
+            color: "bg-yellow-50",
+            text: "철새인데도 날아다니는 게 서툴고 고소공포증까지 있는 작고 노란 새, 우드스탁입니다. 재미있는 사실은 코믹 스트립에서 우드스탁의 말은 항상 길쭉한 빗금(|||||)들로만 표현된다는 것입니다. <br><br>우리 눈에는 그저 낙서 같지만, 놀랍게도 스누피는 이 작은 새의 기쁨, 슬픔, 불평을 완벽하게 알아듣고 대화를 나눕니다. 세상에 내 말을 온전히 알아주는 단 한 명의 친구가 있다는 것, 그것이 우드스탁이 엉성한 둥지 위에서도 늘 행복하게 지저귈 수 있는 이유입니다."
+        },
+        {
+            id: 11,
+            title: "웜 퍼피 레이크",
+            subtitle: "행복은 포근한 강아지",
+            emoji: "🌅",
+            color: "bg-cyan-100",
+            text: "\"내 곁에 남아 있는 건 너뿐이야 (You're the only one who stays with me)\"<br><br>찰리 브라운은 야구 경기에서 지고, 좋아하는 여자아이에게 말도 못 걸고, 친구들에게 놀림을 받는 우울한 하루를 보냅니다. 하지만 해 질 녘 호숫가 나루터에 고개를 숙이고 앉아 있을 때, 그의 곁에는 항상 스누피가 조용히 다가와 함께해 줍니다.<br><br>백 마디 위로의 말보다 그저 내 옆에 체온을 나누며 나란히 앉아주는 작은 강아지. \"행복은 포근한 강아지\"라는 피너츠의 가장 아름답고 유명한 명언이 탄생한 찰리 브라운과 스누피의 위대한 우정 이야기입니다."
+        },
+        {
+            id: 12,
+            title: "루시의 가드닝 스쿨",
+            subtitle: "보스 루시의 숨겨진 다정함",
+            emoji: "🪴",
+            color: "bg-emerald-100",
+            text: "평소엔 친구들에게 대장 노릇을 하고 툴툴거리기 바쁜 보스 기질의 루시지만, 자연 앞에서는 조금 다릅니다. 코믹 스트립에서 루시는 종종 화단에 물을 주며 식물들과 진지한 대화를 나눕니다.<br><br>(물론 가끔은 씨앗을 향해 \"빨리빨리 자라지 못해!\"라고 윽박지르기도 하지만요!) 루시에게 가드닝은 단순히 식물을 키우는 것을 넘어, 생명을 돌보고 자연과 교감하는 그녀만의 숨겨진 부드러운 방식입니다."
+        }
+    ];
+</script>
+
+<div id="app-container">
+    
+    <!-- PAGE 1: Home/List View -->
+    <div id="home-page" class="page page-active">
+        <!-- Header -->
+        <header class="bg-white px-6 py-5 shadow-sm z-20 sticky top-0">
+            <h1 class="text-xl font-bold text-gray-800">스누피가든 에피소드 탐구</h1>
+            <p class="text-sm text-gray-500 mt-1">피너츠 코믹 스트립 속으로 떠나는 도슨트</p>
+        </header>
+
+        <!-- List Area -->
+        <div class="flex-1 overflow-y-auto scrollable-area p-4 pb-10 bg-slate-50" id="list-container">
+            <!-- List items will be injected here via JS -->
+        </div>
+    </div>
+
+    <!-- PAGE 2: Detail/Interaction View -->
+    <div id="detail-page" class="page page-hidden-right bg-white">
+        <!-- Detail Header -->
+        <header class="px-4 py-4 flex items-center border-b border-gray-100 z-20">
+            <button onclick="navigateBack()" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <div class="flex-1 text-center font-bold text-gray-800 mr-10" id="detail-top-title">에피소드</div>
+        </header>
+
+        <!-- Detail Content -->
+        <div class="flex-1 overflow-y-auto scrollable-area relative flex flex-col">
+            
+            <!-- Visual Hero Area -->
+            <div id="detail-hero" class="h-64 flex flex-col justify-center items-center transition-colors duration-500 relative">
+                <!-- Decorative background elements -->
+                <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, black 1px, transparent 0); background-size: 20px 20px;"></div>
+                
+                <div id="detail-emoji" class="text-7xl mb-4 relative z-10 drop-shadow-md">🏕️</div>
+                <h2 id="detail-title" class="text-2xl font-black text-gray-900 relative z-10 text-center px-4">타이틀</h2>
+                <p id="detail-subtitle" class="text-gray-700 mt-2 font-medium relative z-10">서브타이틀</p>
+            </div>
+
+            <!-- Interaction Area -->
+            <div class="px-6 py-8 flex-1 flex flex-col items-center bg-white rounded-t-3xl -mt-6 z-20 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+                
+                <!-- Interaction Button (Simulates NFC tag / QR scan) -->
+                <div id="interaction-zone" class="w-full flex flex-col items-center justify-center my-8">
+                    <p class="text-sm text-gray-400 mb-4 font-medium text-center">해당 구역에 도착하셨나요?<br>아래 버튼을 눌러 스토리를 확인하세요.</p>
+                    <button onclick="revealStory()" class="btn-interact bg-gray-900 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-black transition-all flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>에피소드 확인하기</span>
+                    </button>
+                </div>
+
+                <!-- Story Content (Hidden initially) -->
+                <div id="story-container" class="story-content w-full text-left">
+                    <div class="w-12 h-1 bg-gray-200 rounded-full mb-6"></div>
+                    <div id="story-text" class="text-gray-700 leading-relaxed text-base break-keep">
+                        <!-- Text injected here -->
+                    </div>
+                    
+                    <!-- Bottom Navigation (Next Spot) -->
+                    <div class="mt-12 mb-8 pt-6 border-t border-gray-100 flex justify-between items-center w-full">
+                        <button onclick="navigateBack()" class="text-gray-500 font-medium hover:text-gray-900">목록으로</button>
+                        <button id="next-spot-btn" onclick="goToNextSpot()" class="text-blue-600 font-bold hover:text-blue-800 flex items-center">
+                            다음 장소 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentSpotIndex = 0;
+    let unlockedSpotIndex = 0; // Tracks which spots are accessible
+    let isTyping = false; 
+    let typeTimeouts = [];
+    let currentStoryHtml = "";
+    
+    // --- Audio Context for Typewriter Sound ---
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    // 화면을 한 번이라도 클릭/터치하면 오디오 컨텍스트를 미리 깨웁니다. (브라우저 정책 우회)
+    document.addEventListener('click', function() {
+        initAudio();
+    }, { once: true });
+    
+    document.addEventListener('touchstart', function() {
+        initAudio();
+    }, { once: true });
+
+    function playTypeClickSound() {
+        if (!audioCtx || audioCtx.state !== 'running') return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        // 경쾌하고 맑은 '타닥' 소리를 위해 triangle 파형 사용
+        osc.type = 'triangle'; 
+        
+        // 주파수를 훨씬 높여서 둔탁한 느낌(저음)을 완전히 없애고 맑고 가볍게 만듭니다.
+        osc.frequency.setValueAtTime(1200, t); 
+        osc.frequency.exponentialRampToValueAtTime(600, t + 0.015);
+        
+        // 볼륨이 아주 짧고 날카롭게 떨어지도록 설정 (스마트폰 키보드 타건음 느낌)
+        gain.gain.setValueAtTime(0.15, t); 
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.015); 
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(t);
+        osc.stop(t + 0.02); // 아주 짧게 끊어지도록 시간 단축
+    }
+    // -----------------------------------------
+
+    // Elements
+    const homePage = document.getElementById('home-page');
+    const detailPage = document.getElementById('detail-page');
+    const listContainer = document.getElementById('list-container');
+    
+    const detailHero = document.getElementById('detail-hero');
+    const detailEmoji = document.getElementById('detail-emoji');
+    const detailTitle = document.getElementById('detail-title');
+    const detailSubtitle = document.getElementById('detail-subtitle');
+    const storyText = document.getElementById('story-text');
+    const storyContainer = document.getElementById('story-container');
+    const interactionZone = document.getElementById('interaction-zone');
+    const nextSpotBtn = document.getElementById('next-spot-btn');
+
+    // Initialize List Shells
+    function initList() {
+        listContainer.innerHTML = '';
+        tourData.forEach((spot, index) => {
+            const card = document.createElement('div');
+            card.id = `spot-card-${index}`;
+            listContainer.appendChild(card);
+        });
+        updateListUI();
+    }
+
+    // Update List UI based on unlocked status
+    function updateListUI() {
+        tourData.forEach((spot, index) => {
+            const isLocked = index > unlockedSpotIndex;
+            const card = document.getElementById(`spot-card-${index}`);
+            
+            let cardClass = `bg-white rounded-2xl p-4 mb-3 shadow-sm border border-gray-100 flex items-center space-x-4 transition-all duration-300 transform `;
+            if (isLocked) {
+                cardClass += `opacity-60 grayscale cursor-not-allowed bg-gray-50`;
+                card.onclick = null;
+            } else {
+                cardClass += `cursor-pointer hover:shadow-md active:scale-[0.98]`;
+                card.onclick = () => openDetail(index);
+            }
+            card.className = cardClass;
+            
+            const iconOrLock = isLocked 
+                ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>`;
+
+            card.innerHTML = `
+                <div class="w-14 h-14 rounded-xl ${spot.color} flex items-center justify-center text-2xl flex-shrink-0 shadow-inner relative">
+                    ${spot.emoji}
+                    ${isLocked ? `<div class="absolute inset-0 bg-white bg-opacity-40 rounded-xl"></div>` : ''}
+                </div>
+                <div class="flex-1">
+                    <p class="text-xs text-gray-400 font-bold mb-0.5">Spot ${spot.id}</p>
+                    <h3 class="text-gray-800 font-bold text-lg leading-tight">${spot.title}</h3>
+                </div>
+                <div class="text-gray-300 flex flex-col items-center">
+                    ${isLocked ? `<span class="text-[10px] text-gray-400 font-bold mb-1">잠김</span>` : ''}
+                    ${iconOrLock}
+                </div>
+            `;
+        });
+    }
+
+    // Open Detail Page
+    function openDetail(index) {
+        if (index > unlockedSpotIndex) return; // Prevent opening locked spots
+        
+        currentSpotIndex = index;
+        const spot = tourData[index];
+
+        // Reset state
+        storyContainer.classList.remove('revealed');
+        interactionZone.style.display = 'flex';
+        
+        // Reset text and typing states
+        storyText.innerHTML = "";
+        storyText.classList.add('cursor-pointer'); // Hint that it can be clicked to skip
+        storyText.title = "클릭하여 텍스트 모두 보기 (스킵)";
+        currentStoryHtml = spot.text;
+        isTyping = false;
+        clearTypingTimeouts();
+        nextSpotBtn.style.display = 'none'; // Hide next button initially
+        
+        // Populate Data
+        detailHero.className = `h-64 flex flex-col justify-center items-center transition-colors duration-500 relative ${spot.color}`;
+        detailEmoji.innerHTML = spot.emoji;
+        detailTitle.innerHTML = spot.title;
+        detailSubtitle.innerHTML = spot.subtitle;
+
+        // Animate transition
+        homePage.classList.remove('page-active');
+        homePage.classList.add('page-hidden-left');
+        
+        detailPage.classList.remove('page-hidden-right');
+        detailPage.classList.add('page-active');
+    }
+
+    // Navigate Back to List
+    function navigateBack() {
+        clearTypingTimeouts();
+        isTyping = false;
+        
+        detailPage.classList.remove('page-active');
+        detailPage.classList.add('page-hidden-right');
+        
+        homePage.classList.remove('page-hidden-left');
+        homePage.classList.add('page-active');
+    }
+
+    // Reveal Story (Simulate interaction)
+    function revealStory() {
+        // Initialize Audio context on first user interaction to bypass browser autoplay blocks
+        initAudio();
+
+        // Hide interaction button
+        interactionZone.style.display = 'none';
+        
+        // Reveal story text
+        storyContainer.classList.add('revealed');
+        
+        // Delay typing slightly for the CSS expand animation to catch up
+        setTimeout(() => {
+            startTypewriter(currentStoryHtml);
+        }, 300);
+    }
+
+    // Clear ongoing typing timeouts
+    function clearTypingTimeouts() {
+        typeTimeouts.forEach(clearTimeout);
+        typeTimeouts = [];
+    }
+
+    // Typewriter effect function
+    function startTypewriter(html) {
+        isTyping = true;
+        storyText.innerHTML = '';
+        
+        // Split text by HTML tags to preserve bolding and line breaks
+        let tokens = html.match(/(<.*?>|[^<]+)/g); 
+        if(!tokens) {
+            onTypewriterComplete();
+            return;
+        }
+        
+        let tokenIndex = 0;
+        let charIndex = 0;
+        let currentHtml = '';
+        const typingSpeed = 40; // ms per character
+
+        function type() {
+            if (!isTyping) return;
+
+            if (tokenIndex >= tokens.length) {
+                onTypewriterComplete();
+                return;
+            }
+
+            let token = tokens[tokenIndex];
+            if (token.startsWith('<')) {
+                // Instantly append tag
+                currentHtml += token;
+                storyText.innerHTML = currentHtml;
+                tokenIndex++;
+                type(); 
+            } else {
+                // Type characters one by one
+                if (charIndex < token.length) {
+                    const char = token.charAt(charIndex);
+                    currentHtml += char;
+
+                    // Play sound if it's an actual character (not space)
+                    if (char.trim() !== '') {
+                        playTypeClickSound();
+                    }
+
+                    // Add a blinking cursor effect while typing
+                    storyText.innerHTML = currentHtml + '<span class="inline-block w-1 h-4 ml-0.5 align-middle bg-gray-500 animate-pulse"></span>'; 
+                    charIndex++;
+                    
+                    // Keep scroll near bottom during typing
+                    const scrollArea = document.querySelector('.scrollable-area');
+                    if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+                    
+                    let timeoutId = setTimeout(type, typingSpeed);
+                    typeTimeouts.push(timeoutId);
+                } else {
+                    charIndex = 0;
+                    tokenIndex++;
+                    type();
+                }
+            }
+        }
+        
+        type();
+    }
+
+    // Skip typing on text click
+    storyText.onclick = function() {
+        if (isTyping) {
+            isTyping = false;
+            clearTypingTimeouts();
+            storyText.innerHTML = currentStoryHtml;
+            onTypewriterComplete();
+            
+            setTimeout(() => {
+                const scrollArea = document.querySelector('.scrollable-area');
+                if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+            }, 50);
+        }
+    };
+
+    // Called when typing is finished or skipped
+    function onTypewriterComplete() {
+        isTyping = false;
+        storyText.classList.remove('cursor-pointer');
+        storyText.title = "";
+        storyText.innerHTML = currentStoryHtml; // Ensure cursor is removed and final HTML is set
+        
+        // Unlock next spot logic
+        if (currentSpotIndex >= unlockedSpotIndex && unlockedSpotIndex < tourData.length - 1) {
+            unlockedSpotIndex = currentSpotIndex + 1;
+            updateListUI(); // Refresh list to unlock the next item
+        }
+
+        // Show Next Button
+        if (currentSpotIndex < tourData.length - 1) {
+            nextSpotBtn.style.display = 'flex';
+            // Small pop animation for the button
+            nextSpotBtn.style.opacity = '0';
+            nextSpotBtn.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                nextSpotBtn.style.transition = 'all 0.4s ease';
+                nextSpotBtn.style.opacity = '1';
+                nextSpotBtn.style.transform = 'translateY(0)';
+            }, 50);
+        } else {
+            nextSpotBtn.style.display = 'none';
+        }
+        
+        // Scroll slightly down to show the next button
+        setTimeout(() => {
+             const scrollArea = document.querySelector('.scrollable-area');
+             if(scrollArea) scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+        }, 100);
+    }
+
+    // Go to Next Spot Directly
+    function goToNextSpot() {
+        if (currentSpotIndex < tourData.length - 1 && currentSpotIndex + 1 <= unlockedSpotIndex) {
+            // Add a small fade effect to simulate loading next data
+            detailPage.style.opacity = '0';
+            
+            setTimeout(() => {
+                openDetail(currentSpotIndex + 1);
+                detailPage.style.opacity = '1';
+            }, 300);
+        }
+    }
+
+    // Run Initialization
+    window.onload = function() {
+        initList();
+    };
+</script>
+
+</body>
+</html>
