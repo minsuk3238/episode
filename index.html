@@ -235,9 +235,13 @@
     <!-- PAGE 1: Home/List View -->
     <div id="home-page" class="page page-active">
         <!-- Header -->
-        <header class="bg-white px-6 py-5 shadow-sm z-20 sticky top-0">
-            <h1 class="text-xl font-bold text-gray-800">스누피가든 에피소드 탐구</h1>
-            <p class="text-sm text-gray-500 mt-1">피너츠 코믹 스트립 속으로 떠나는 에피소드</p>
+        <header class="bg-white px-6 py-5 shadow-sm z-20 sticky top-0 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">스누피가든 에피소드 탐구</h1>
+                <p class="text-sm text-gray-500 mt-1">피너츠 코믹 스트립 속으로 떠나는 에피소드</p>
+            </div>
+            <!-- 초기화 버튼 (테스트용) -->
+            <button onclick="resetProgress()" class="text-[10px] text-gray-400 border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-50">진행 초기화</button>
         </header>
 
         <!-- List Area -->
@@ -311,8 +315,9 @@
 </div>
 
 <script>
+    // LocalStorage를 활용하여 진행 상태 기억하기
     let currentSpotIndex = 0;
-    let unlockedSpotIndex = 0;
+    let unlockedSpotIndex = parseInt(localStorage.getItem('snoopyUnlockedSpot') || '0'); 
     let isTyping = false; 
     let typeTimeouts = [];
     let currentStoryHtml = "";
@@ -341,15 +346,14 @@
         if (!audioCtx || audioCtx.state !== 'running') return;
         const t = audioCtx.currentTime;
         
-        // 갈축 키보드의 '도각'거리는 묵직한 타격음 구현
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
-        osc.type = 'square'; // 약간의 마찰음 느낌을 주는 파형
-        osc.frequency.setValueAtTime(250, t); // 250Hz로 낮춰 묵직하게 설정
+        osc.type = 'square'; 
+        osc.frequency.setValueAtTime(250, t); 
         osc.frequency.exponentialRampToValueAtTime(100, t + 0.02);
         
-        gain.gain.setValueAtTime(0.08, t); // 볼륨 조절
+        gain.gain.setValueAtTime(0.08, t); 
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.02); 
         
         osc.connect(gain);
@@ -374,6 +378,74 @@
     const storyContainer = document.getElementById('story-container');
     const interactionZone = document.getElementById('interaction-zone');
     const nextSpotBtn = document.getElementById('next-spot-btn');
+
+    // 앱 로드 시 NFC 태그 (URL 파라미터) 확인 로직
+    window.onload = function() {
+        checkNfcTag();
+    };
+
+    function checkNfcTag() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // --- 마스터 코드 (모든 스팟 잠금 해제) ---
+        const masterCode = urlParams.get('master');
+        if (masterCode === 'peanuts') {
+            unlockedSpotIndex = tourData.length - 1; // 마지막 스팟까지 전부 해제
+            localStorage.setItem('snoopyUnlockedSpot', unlockedSpotIndex);
+            alert("마스터 모드 활성화: 모든 에피소드가 잠금 해제되었습니다.");
+            
+            // 깔끔한 URL을 위해 파라미터 숨기기
+            window.history.replaceState({}, document.title, window.location.pathname);
+            initList();
+            return;
+        }
+        // ----------------------------------------
+
+        // URL에서 '?spot=번호' 파라미터 가져오기
+        const spotParam = urlParams.get('spot');
+
+        if (spotParam) {
+            const targetIndex = parseInt(spotParam) - 1; // spot=1 이면 index 0
+
+            if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < tourData.length) {
+                // 1. 순서에 맞게 태그했거나(다음 스팟), 이미 지나온 스팟을 태그한 경우
+                if (targetIndex <= unlockedSpotIndex + 1) {
+                    
+                    // 딱 다음 스팟을 태그했다면 잠금 해제 업데이트
+                    if (targetIndex > unlockedSpotIndex) {
+                        unlockedSpotIndex = targetIndex;
+                        localStorage.setItem('snoopyUnlockedSpot', unlockedSpotIndex);
+                    }
+                    
+                    initList();
+                    openDetail(targetIndex);
+                    
+                    // 깔끔한 URL을 위해 파라미터 숨기기
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                } 
+                // 2. 진행하지 않은 사람(처음)이거나 건너뛰어 태그한 경우
+                else {
+                    alert("순서대로 진행해주세요! 이전 장소의 이야기를 먼저 확인해야 합니다.");
+                    // 메인 화면으로 돌려보내고 파라미터 숨기기
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+        }
+        
+        // 일반 접속이거나 파라미터가 유효하지 않은 경우
+        initList();
+    }
+
+    // 개발 및 테스트용 초기화 함수
+    function resetProgress() {
+        if(confirm('진행 상황을 모두 초기화 하시겠습니까?')) {
+            localStorage.removeItem('snoopyUnlockedSpot');
+            unlockedSpotIndex = 0;
+            initList();
+            alert('초기화 되었습니다.');
+        }
+    }
 
     function initList() {
         listContainer.innerHTML = '';
@@ -503,7 +575,9 @@
         let tokenIndex = 0;
         let charIndex = 0;
         let currentHtml = '';
-        const baseTypingSpeed = 65; // 전체적으로 천천히 타이핑되게 속도 조정
+        
+        // 타이핑 속도를 이전처럼 조금 더 빠르게 수정 (65 -> 30)
+        const baseTypingSpeed = 30; 
 
         function type() {
             if (!isTyping) return;
@@ -534,8 +608,8 @@
                     const scrollArea = document.querySelector('.scrollable-area');
                     if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
                     
-                    // 0~40ms의 무작위 딜레이를 더해 사람이 타자를 치는 듯한 불규칙한 리듬 생성
-                    const humanizeDelay = Math.floor(Math.random() * 40);
+                    // 불규칙한 리듬감 지연시간도 약간 줄임 (40 -> 20)
+                    const humanizeDelay = Math.floor(Math.random() * 20);
                     let timeoutId = setTimeout(type, baseTypingSpeed + humanizeDelay);
                     typeTimeouts.push(timeoutId);
                 } else {
@@ -569,8 +643,10 @@
         storyText.title = "";
         storyText.innerHTML = currentStoryHtml; 
         
+        // 에피소드를 다 읽으면 진행 상황 업데이트 및 로컬 스토리지 저장
         if (currentSpotIndex >= unlockedSpotIndex && unlockedSpotIndex < tourData.length - 1) {
             unlockedSpotIndex = currentSpotIndex + 1;
+            localStorage.setItem('snoopyUnlockedSpot', unlockedSpotIndex);
             updateListUI(); 
         }
 
@@ -603,10 +679,6 @@
             }, 300);
         }
     }
-
-    window.onload = function() {
-        initList();
-    };
 </script>
 
 </body>
