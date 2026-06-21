@@ -643,12 +643,8 @@
         storyText.title = "";
         storyText.innerHTML = currentStoryHtml; 
         
-        // 에피소드를 다 읽으면 진행 상황 업데이트 및 로컬 스토리지 저장
-        if (currentSpotIndex >= unlockedSpotIndex && unlockedSpotIndex < tourData.length - 1) {
-            unlockedSpotIndex = currentSpotIndex + 1;
-            localStorage.setItem('snoopyUnlockedSpot', unlockedSpotIndex);
-            updateListUI(); 
-        }
+        // (삭제됨) 텍스트를 다 읽어도 자동으로 다음 스팟이 해제되지 않도록 로직 제거. 
+        // 다음 스팟은 오직 NFC 태그 스캔으로만 열립니다.
 
         if (currentSpotIndex < tourData.length - 1) {
             nextSpotBtn.style.display = 'flex';
@@ -670,13 +666,19 @@
     }
 
     function goToNextSpot() {
-        if (currentSpotIndex < tourData.length - 1 && currentSpotIndex + 1 <= unlockedSpotIndex) {
-            detailPage.style.opacity = '0';
-            
-            setTimeout(() => {
-                openDetail(currentSpotIndex + 1);
-                detailPage.style.opacity = '1';
-            }, 300);
+        if (currentSpotIndex < tourData.length - 1) {
+            // 이미 다음 장소가 열려있는 경우 (마스터 코드를 썼거나, 이미 다녀왔던 곳일 때)
+            if (currentSpotIndex + 1 <= unlockedSpotIndex) {
+                detailPage.style.opacity = '0';
+                
+                setTimeout(() => {
+                    openDetail(currentSpotIndex + 1);
+                    detailPage.style.opacity = '1';
+                }, 300);
+            } else {
+                // 아직 안 열렸을 때 (일반적인 진행 상황)
+                alert("다음 장소로 이동하여 NFC 태그를 스캔해주세요! 🐾");
+            }
         }
     }
 </script>
