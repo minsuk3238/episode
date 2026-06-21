@@ -273,6 +273,7 @@
                      (예: w-24 h-24 -> w-32 h-32 등으로 변경 가능)
                 -->
                 <div class="w-28 h-28 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-lg relative overflow-hidden mb-4 bg-white bg-opacity-70">
+                    <!-- 수정한 이미지 경로: 'images/' 경로를 제거하여 최상위 폴더에 있는 이미지 파일을 바로 불러옵니다. -->
                     <img id="detail-img" src="" alt="Spot Image" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div id="detail-img-fallback" class="hidden flex items-center justify-center w-full h-full text-gray-700 font-extrabold text-3xl"></div>
                 </div>
@@ -418,7 +419,8 @@
                      (예: w-16 h-16 등으로 조금 더 크게 가꿀 수 있습니다.)
                 -->
                 <div class="w-14 h-14 rounded-xl flex items-center justify-center text-xl flex-shrink-0 shadow-inner relative overflow-hidden" style="background-color: ${spot.color}">
-                    <img src="images/${spot.imageName}" alt="${spot.title}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <!-- 수정한 이미지 경로: 'images/' 경로를 제거하여 최상위 폴더에 있는 이미지 파일을 바로 불러옵니다. -->
+                    <img src="${spot.imageName}" alt="${spot.title}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <div class="hidden flex items-center justify-center w-full h-full text-gray-600 font-extrabold text-lg">${spot.id}</div>
                     ${isLocked ? `<div class="absolute inset-0 bg-white bg-opacity-40 rounded-xl"></div>` : ''}
                 </div>
@@ -468,7 +470,8 @@
 
         // Set Image & Fallback Target
         detailImg.style.display = 'block';
-        detailImg.src = `images/${spot.imageName}`;
+        // 수정한 이미지 경로: 'images/' 경로를 제거하여 최상위 폴더에 있는 이미지 파일을 바로 불러옵니다.
+        detailImg.src = spot.imageName;
         detailImgFallback.style.display = 'none';
         detailImgFallback.innerHTML = spot.id;
         
