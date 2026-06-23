@@ -13,7 +13,6 @@
     <style>
         /* --- CUSTOM FONTS INTEGRATION --- */
         
-        /* 1. 영문 및 숫자 전용 피너츠 손글씨 폰트 (Schulz.otf) */
         @font-face {
             font-family: 'PeanutsSchulz';
             src: url('Schulz.otf') format('opentype'),
@@ -22,7 +21,6 @@
             font-style: normal;
         }
 
-        /* 2. 우드스탁 전용 빗금 대화 폰트 (Woodstock Talk.otf) */
         @font-face {
             font-family: 'WoodstockTalk';
             src: url('Woodstock Talk.otf') format('opentype'),
@@ -32,9 +30,8 @@
         }
 
         body {
-            /* 영문/숫자는 PeanutsSchulz로 우선 매핑, 한글은 NanumSquare로 매핑되도록 디자인 설정 */
             font-family: 'PeanutsSchulz', 'NanumSquare', sans-serif;
-            background-color: #e2e8f0; /* Soft background for desktop */
+            background-color: #e2e8f0; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -43,15 +40,13 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 우드스탁 전용 텍스트 스타일 정의 */
         .font-woodstock {
             font-family: 'WoodstockTalk', sans-serif !important;
         }
 
-        /* Mobile App Container Simulation */
         #app-container {
             width: 100%;
-            max-width: 414px; /* iPhone Max width */
+            max-width: 414px; 
             height: 100vh;
             max-height: 896px;
             background-color: #f8fafc;
@@ -67,7 +62,6 @@
             }
         }
 
-        /* Smooth page transitions */
         .page {
             position: absolute;
             top: 0;
@@ -81,63 +75,37 @@
             flex-direction: column;
         }
 
-        .page-hidden-right {
-            transform: translateX(100%);
-            opacity: 0;
-            pointer-events: none;
-        }
+        .page-hidden-right { transform: translateX(100%); opacity: 0; pointer-events: none; }
+        .page-hidden-left { transform: translateX(-100%); opacity: 0; pointer-events: none; }
+        .page-active { transform: translateX(0); opacity: 1; pointer-events: auto; }
 
-        .page-hidden-left {
-            transform: translateX(-100%);
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .page-active {
-            transform: translateX(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        /* Story reveal animation */
         .story-content {
             max-height: 0;
             opacity: 0;
             overflow: hidden;
             transition: max-height 0.8s ease-in-out, opacity 0.6s ease-in-out;
         }
+        .story-content.revealed { max-height: 1000px; opacity: 1; }
 
-        .story-content.revealed {
-            max-height: 1000px; /* Arbitrary large number */
-            opacity: 1;
-        }
+        .scrollable-area::-webkit-scrollbar { width: 6px; }
+        .scrollable-area::-webkit-scrollbar-track { background: transparent; }
+        .scrollable-area::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
 
-        /* Custom Scrollbar for story area */
-        .scrollable-area::-webkit-scrollbar {
-            width: 6px;
-        }
-        .scrollable-area::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .scrollable-area::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 20px;
-        }
-
-        /* Pulsing interaction button */
         @keyframes pulse-soft {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
-        .btn-interact {
-            animation: pulse-soft 2s infinite;
+        .btn-interact { animation: pulse-soft 2s infinite; }
+        
+        /* Map Zoom Transition */
+        #map-zoom-wrapper {
+            transition: width 0.3s ease-out;
         }
     </style>
 </head>
 <body>
 
 <script>
-    // 11 Main Themes configuration with hex colors and dedicated image names
     const tourData = [
         {
             id: 1,
@@ -225,7 +193,7 @@
             subtitle: "보스 루시의 숨겨진 다정함",
             imageName: "spot11_gardening.png",
             color: "#e0c9e1",
-            text: "평소엔 친구들에게 대장 노릇을 하고 툴툴거리기 바쁜 보스 기질의 루시지만, 자연 앞에서는 조금 다릅니다. 코믹 스트립에서 루시는 종종 화단에 물을 주며 식물들과 진지한 대화를 나눕니다.<br><br>(물론 가끔은 씨앗을 향해 \"빨리빨리 자라지 못해!\"라고 윽박지르기도 하지만요!) 루시에게 가드닝은 단순히 식물을 키우는 것을 넘어, 생명을 돌보고 자연과 교감하는 그녀만의 숨겨진 부드러운 방식입니다."
+            text: "평소엔 친구들에게 대장 노릇을 이고 툴툴거리기 바쁜 보스 기질의 루시지만, 자연 앞에서는 조금 다릅니다. 코믹 스트립에서 루시는 종종 화단에 물을 주며 식물들과 진지한 대화를 나눕니다.<br><br>(물론 가끔은 씨앗을 향해 \"빨리빨리 자라지 못해!\"라고 윽박지르기도 하지만요!) 루시에게 가드닝은 단순히 식물을 키우는 것을 넘어, 생명을 돌보고 자연과 교감하는 그녀만의 숨겨진 부드러운 방식입니다."
         }
     ];
 </script>
@@ -240,8 +208,13 @@
                 <h1 class="text-xl font-bold text-gray-800">스누피가든 에피소드 탐구</h1>
                 <p class="text-sm text-gray-500 mt-1">피너츠 코믹 스트립 속으로 떠나는 에피소드</p>
             </div>
-            <!-- 초기화 버튼 (테스트용) -->
-            <button onclick="resetProgress()" class="text-[10px] text-gray-400 border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-50">진행 초기화</button>
+            <div class="flex flex-col items-end gap-2">
+                <!-- 지도 모달 열기 버튼 -->
+                <button onclick="openMap()" class="text-sm bg-green-50 text-green-600 font-bold border border-green-200 px-3 py-1.5 rounded-full hover:bg-green-100 flex items-center shadow-sm">
+                    🗺️ 지도 보기
+                </button>
+                <button onclick="resetProgress()" class="text-[10px] text-gray-400 border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-50">초기화</button>
+            </div>
         </header>
 
         <!-- List Area -->
@@ -264,10 +237,8 @@
 
         <!-- Detail Content -->
         <div class="flex-1 overflow-y-auto scrollable-area relative flex flex-col">
-            
             <!-- Visual Hero Area -->
             <div id="detail-hero" class="h-64 flex flex-col justify-center items-center transition-colors duration-500 relative">
-                <!-- Decorative background elements -->
                 <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, black 1px, transparent 0); background-size: 20px 20px;"></div>
                 
                 <div class="w-28 h-28 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 shadow-lg relative overflow-hidden mb-4 bg-white bg-opacity-70">
@@ -281,8 +252,6 @@
 
             <!-- Interaction Area -->
             <div class="px-6 py-8 flex-1 flex flex-col items-center bg-white rounded-t-3xl -mt-6 z-20 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
-                
-                <!-- Interaction Button -->
                 <div id="interaction-zone" class="w-full flex flex-col items-center justify-center my-8">
                     <p class="text-sm text-gray-400 mb-4 font-medium text-center">해당 구역에 도착하셨나요?<br>아래 버튼을 눌러 스토리를 확인하세요.</p>
                     <button onclick="revealStory()" class="btn-interact bg-gray-900 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-black transition-all flex items-center space-x-2">
@@ -293,14 +262,10 @@
                     </button>
                 </div>
 
-                <!-- Story Content -->
                 <div id="story-container" class="story-content w-full text-left">
                     <div class="w-12 h-1 bg-gray-200 rounded-full mb-6"></div>
-                    <div id="story-text" class="text-gray-700 leading-relaxed text-base break-keep">
-                        <!-- Text injected here -->
-                    </div>
+                    <div id="story-text" class="text-gray-700 leading-relaxed text-base break-keep"></div>
                     
-                    <!-- Bottom Navigation -->
                     <div class="mt-12 mb-8 pt-6 border-t border-gray-100 flex justify-between items-center w-full">
                         <button onclick="navigateBack()" class="text-gray-500 font-medium hover:text-gray-900">목록으로</button>
                         <button id="next-spot-btn" onclick="goToNextSpot()" class="text-blue-600 font-bold hover:text-blue-800 flex items-center">
@@ -308,63 +273,142 @@
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 </div>
 
+<!-- ================= MODALS ================= -->
+
+<!-- 1. NFC Guide Modal -->
+<div id="nfc-modal" class="fixed inset-0 z-50 bg-black bg-opacity-60 hidden justify-center items-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative animate-[pulse-soft_0.3s_ease-out_1]">
+        <button onclick="closeNFCGuide()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">NFC 태그 안내 📱</h3>
+        
+        <div class="space-y-4">
+            <!-- iPhone Guide -->
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div class="font-bold text-blue-600 mb-1 flex items-center gap-1">🍎 iPhone (아이폰)</div>
+                <p class="text-sm text-gray-700 break-keep">아이폰은 단말기 <b>상단(카메라 옆 부분)</b>에 NFC 리더기가 있습니다. 화면이 켜진 상태에서 폰의 윗부분을 팻말에 가볍게 터치해 주세요.</p>
+            </div>
+            <!-- Galaxy Guide -->
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div class="font-bold text-green-600 mb-1 flex items-center gap-1">🤖 Galaxy (안드로이드)</div>
+                <p class="text-sm text-gray-700 break-keep">안드로이드 폰은 단말기 <b>뒷면 정중앙</b>에 주로 위치해 있습니다.<br><span class="text-xs text-red-500 font-bold">* 반드시 설정에서 'NFC 기본모드'를 켜주세요!</span></p>
+            </div>
+        </div>
+        <button onclick="closeNFCGuide()" class="mt-6 w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-black transition-colors">확인했습니다</button>
+    </div>
+</div>
+
+<!-- 2. Map Modal -->
+<div id="map-modal" class="fixed inset-0 z-50 bg-white hidden flex-col">
+    <header class="px-4 py-4 flex justify-between items-center border-b border-gray-100 shadow-sm z-20 bg-white">
+        <h2 class="text-lg font-bold text-gray-800">야외가든 노선도</h2>
+        <button onclick="closeMap()" class="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </header>
+    
+    <!-- Map Container -->
+    <div class="flex-1 overflow-auto bg-gray-200 relative" id="map-scroll-area">
+        <div id="map-zoom-wrapper" class="relative w-full origin-top-left" style="width: 100%;">
+            <!-- User Uploaded Map Image -->
+            <img src="Snoopy garden map.jpg" class="w-full h-auto block" alt="Snoopy Garden Map">
+            
+            <!-- Polyline SVG Overlay -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 240 240" preserveAspectRatio="none">
+                <!-- 끊어진 폴리라인들을 중간다리(line)로 이어 하나의 부드러운 곡선 그룹으로 처리 -->
+                <g stroke="#ef4444" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round" opacity="0.85">
+                    <polyline points="2.02 52.02 23.18 29.08 20.48 5.45 11.02 .5 0 .5"/>
+                    <line x1="0" y1="0.5" x2="7.72" y2="73.51"/>
+                    <polyline points="7.72 73.51 .52 61.14 5.02 36.16 8.85 33.01 48.9 33.01 58.57 25.81 59.25 16.81 55.65 10.29 43.5 .39"/>
+                    <line x1="43.5" y1="0.39" x2="17.18" y2="121.33" />
+                    <polyline points="17.18 121.33 25.28 111.88 32.03 108.51 36.31 95.91 21.23 78.13 2.33 64.18 .53 54.06 21.91 29.53 33.16 27.28 39.01 29.98 39.77 32.74 39.01 38.53 48.46 49.56 73.88 51.81 111.01 31.78 122.03 31.78 135.81 20.16 145.88 16.03 158.93 .73 162.53 .51 178.06 5.91 180.53 12.66 172.21 36.06 159.38 40.11 157.58 47.08 157.36 56.76 153.31 62.38 140.48 64.18 134.63 78.58"/>
+                    <line x1="134.63" y1="78.58" x2="39.15" y2="0.38" />
+                    <polyline points="39.15 .38 20.53 16.32 9.51 31.85 2.53 44 .51 57.05 8.83 97.32 32.91 116.9 64.41 129.05 84.43 127.02 90.96 118.02"/>
+                    <line x1="90.96" y1="118.02" x2="0.45" y2="121.68" />
+                    <polyline points=".45 121.68 41.02 41.69 70.94 .29"/>
+                    <line x1="70.94" y1="0.29" x2="16.74" y2="130.3" />
+                    <polyline points="16.74 130.3 26.87 115.9 20.78 106.13 .54 87.33 1.67 81.03 32.72 46.38 36.09 45.48 42.39 55.15 38.41 74.76 38.34 80.35 40.82 83.28 58.59 84.63 63.99 78.78 63.54 73.6 52.07 15.33 60.84 .25"/>
+                    <line x1="60.84" y1="0.25" x2="0.43" y2="73.9" />
+                    <polyline points=".43 73.9 5.6 65.35 19.1 59.28 31.77 46.36 41.38 43.53 56 54.1 60.95 76.15 72.43 89.88 109.1 78.85 113.15 68.28 107.75 41.95 89.67 34.41 83.49 17.97 85.7 11.58 97.63 7.08 106.88 8.23 113.15 .55 123.95 2.8 125.53 6.63 125.56 8.94 127.87 11.37 121.45 17.72 121.78 19.64 126.22 21.18 119.7 27.93 126.22 33.07 120.62 37.13 127.9 43.67 123.28 47.8 126.88 74.35 112.7 86.73 73.23 101.63 52.85 131.73 53.98 168.85 53.53 195.85 49.7 209.8"/>
+                    <line x1="209.8" y1="49.7" x2="0.14" y2="0.48" />
+                    <polyline points=".14 .48 46.94 13.76 58.64 12.41"/>
+                    <line x1="58.64" y1="12.41" x2="48.94" y2="106.8" />
+                    <polyline points="48.94 106.8 59.52 62.02 59.74 26.47 63.12 3.07 68.07 .6 73.24 5.1 70.99 61.35 75.27 70.8 68.52 115.35 73.92 132.9 59.86 169.44 48.27 219.3 5.07 234.82 .2 232.72"/>
+                    <line x1="0.2" y1="232.72" x2="119.98" y2="72.75" />
+                    <polyline points="119.98 72.75 128.72 35.06 106.93 3.46 72.95 .53 58.33 26.63 76.55 29.1 78.35 32.93 71.83 38.1 63.26 38.69 52.93 37.2 47.75 32.7 6.13 41.48 .73 47.78 .5 69.83 18.28 84.9 21.88 97.5 35.95 111.15 54.64 116.24 55.85 143.63"/>
+                    <line x1="55.85" y1="143.63" x2="111.87" y2="0.47" />
+                    <polyline points="111.87 .47 132.12 7.22 152.6 .92 187.47 40.07 207.05 67.52 165.65 77.87 118.85 89.8 104.45 88.45 78.35 78.32 63.05 77.2 30.2 79.45 .72 63.02 .5 54.25"/>
+                </g>
+            </svg>
+        </div>
+    </div>
+    
+    <!-- Map Zoom Controls -->
+    <div class="absolute bottom-6 right-4 flex flex-col gap-2 z-30">
+        <button onclick="zoomMap('in')" class="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-50 font-bold text-xl">+</button>
+        <button onclick="zoomMap('out')" class="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-50 font-bold text-2xl">-</button>
+    </div>
+</div>
+<!-- ============================================== -->
+
 <script>
-    // LocalStorage를 활용하여 진행 상태 기억하기
+    // --- 1. 상태 및 오디오 변수 ---
     let currentSpotIndex = 0;
-    let unlockedSpotIndex = parseInt(localStorage.getItem('snoopyUnlockedSpot') || '0'); 
+    // (수정) 초기값을 -1로 변경하여 기본적으로 모든 스팟(1번 포함)이 잠금 상태가 되도록 함.
+    let unlockedSpotIndex = parseInt(localStorage.getItem('snoopyUnlockedSpot') || '-1'); 
     let isTyping = false; 
     let typeTimeouts = [];
     let currentStoryHtml = "";
     
-    // --- Audio Context for Typewriter Sound ---
     let audioCtx;
+    let typingSoundInterval = null;
 
     function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    document.addEventListener('click', function() {
-        initAudio();
-    }, { once: true });
-    
-    document.addEventListener('touchstart', function() {
-        initAudio();
-    }, { once: true });
+    document.addEventListener('click', initAudio, { once: true });
+    document.addEventListener('touchstart', initAudio, { once: true });
 
-    function playTypeClickSound() {
+    function playTypewriterSound() {
         if (!audioCtx || audioCtx.state !== 'running') return;
         const t = audioCtx.currentTime;
-        
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        
-        osc.type = 'square'; 
-        osc.frequency.setValueAtTime(250, t); 
-        osc.frequency.exponentialRampToValueAtTime(100, t + 0.02);
-        
-        gain.gain.setValueAtTime(0.08, t); 
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.02); 
-        
+        osc.type = 'triangle'; 
+        osc.frequency.setValueAtTime(120, t); 
+        osc.frequency.exponentialRampToValueAtTime(30, t + 0.05);
+        gain.gain.setValueAtTime(0.15, t); 
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05); 
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
         osc.start(t);
-        osc.stop(t + 0.03);
+        osc.stop(t + 0.06);
     }
-    // -----------------------------------------
 
-    // Elements
+    function startTypingSound() {
+        if (typingSoundInterval) clearInterval(typingSoundInterval);
+        playTypewriterSound(); 
+        typingSoundInterval = setInterval(playTypewriterSound, 150); 
+    }
+
+    function stopTypingSound() {
+        if (typingSoundInterval) {
+            clearInterval(typingSoundInterval);
+            typingSoundInterval = null;
+        }
+    }
+
+    // --- 2. 엘리먼트 맵핑 ---
     const homePage = document.getElementById('home-page');
     const detailPage = document.getElementById('detail-page');
     const listContainer = document.getElementById('list-container');
@@ -379,69 +423,51 @@
     const interactionZone = document.getElementById('interaction-zone');
     const nextSpotBtn = document.getElementById('next-spot-btn');
 
-    // 앱 로드 시 NFC 태그 (URL 파라미터) 확인 로직
-    window.onload = function() {
-        checkNfcTag();
-    };
+    // --- 3. 초기화 및 로직 ---
+    window.onload = function() { checkNfcTag(); };
 
     function checkNfcTag() {
         const urlParams = new URLSearchParams(window.location.search);
-        
-        // --- 마스터 코드 (모든 스팟 잠금 해제) ---
         const masterCode = urlParams.get('master');
+        
         if (masterCode === 'peanuts') {
-            unlockedSpotIndex = tourData.length - 1; // 마지막 스팟까지 전부 해제
+            unlockedSpotIndex = tourData.length - 1; 
             localStorage.setItem('snoopyUnlockedSpot', unlockedSpotIndex);
             alert("마스터 모드 활성화: 모든 에피소드가 잠금 해제되었습니다.");
-            
-            // 깔끔한 URL을 위해 파라미터 숨기기
             window.history.replaceState({}, document.title, window.location.pathname);
             initList();
             return;
         }
-        // ----------------------------------------
 
-        // URL에서 '?spot=번호' 파라미터 가져오기
         const spotParam = urlParams.get('spot');
 
         if (spotParam) {
-            const targetIndex = parseInt(spotParam) - 1; // spot=1 이면 index 0
-
+            const targetIndex = parseInt(spotParam) - 1; 
+            
             if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < tourData.length) {
-                // 1. 순서에 맞게 태그했거나(다음 스팟), 이미 지나온 스팟을 태그한 경우
+                // unlockedSpotIndex가 처음(-1)일 때 타겟이 0(1번스팟)이면 0 <= 0 이 성립되어 열림.
                 if (targetIndex <= unlockedSpotIndex + 1) {
-                    
-                    // 딱 다음 스팟을 태그했다면 잠금 해제 업데이트
                     if (targetIndex > unlockedSpotIndex) {
                         unlockedSpotIndex = targetIndex;
                         localStorage.setItem('snoopyUnlockedSpot', unlockedSpotIndex);
                     }
-                    
                     initList();
                     openDetail(targetIndex);
-                    
-                    // 깔끔한 URL을 위해 파라미터 숨기기
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return;
-                } 
-                // 2. 진행하지 않은 사람(처음)이거나 건너뛰어 태그한 경우
-                else {
+                } else {
                     alert("순서대로 진행해주세요! 이전 장소의 이야기를 먼저 확인해야 합니다.");
-                    // 메인 화면으로 돌려보내고 파라미터 숨기기
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
         }
-        
-        // 일반 접속이거나 파라미터가 유효하지 않은 경우
         initList();
     }
 
-    // 개발 및 테스트용 초기화 함수
     function resetProgress() {
-        if(confirm('진행 상황을 모두 초기화 하시겠습니까?')) {
+        if(confirm('진행 상황을 모두 초기화 하시겠습니까? 처음부터 다시 시작합니다.')) {
             localStorage.removeItem('snoopyUnlockedSpot');
-            unlockedSpotIndex = 0;
+            unlockedSpotIndex = -1; // 1번도 잠기도록 수정
             initList();
             alert('초기화 되었습니다.');
         }
@@ -449,6 +475,26 @@
 
     function initList() {
         listContainer.innerHTML = '';
+        
+        // (추가) 로고 배너 & NFC 안내 버튼 영역
+        const banner = document.createElement('div');
+        banner.className = "w-full mb-5 cursor-pointer hover:scale-[0.98] transition-transform duration-200";
+        banner.onclick = openNFCGuide;
+        banner.innerHTML = `
+            <div class="bg-white rounded-2xl p-5 shadow-sm border-2 border-blue-100 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-50 rounded-full opacity-50"></div>
+                <!-- snoopy_logo.png를 여기에 적용 -->
+                <img src="snoopy_logo.png" alt="Snoopy Logo" class="h-14 object-contain mb-2 z-10" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="hidden text-gray-700 font-black text-xl mb-2 z-10">스누피가든 NFC 투어</div>
+                <div class="flex items-center gap-1.5 text-xs text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-full z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                    NFC 태그 방법 알아보기
+                </div>
+            </div>
+        `;
+        listContainer.appendChild(banner);
+
+        // 스팟 리스트 렌더링
         tourData.forEach((spot, index) => {
             const card = document.createElement('div');
             card.id = `spot-card-${index}`;
@@ -496,19 +542,18 @@
 
     function openDetail(index) {
         if (index > unlockedSpotIndex) return;
-        
         currentSpotIndex = index;
         const spot = tourData[index];
 
         storyContainer.classList.remove('revealed');
         interactionZone.style.display = 'flex';
-        
         storyText.innerHTML = "";
         storyText.classList.add('cursor-pointer');
         storyText.title = "클릭하여 텍스트 모두 보기 (스킵)";
         currentStoryHtml = spot.text;
         isTyping = false;
         clearTypingTimeouts();
+        stopTypingSound(); 
         nextSpotBtn.style.display = 'none';
         
         detailHero.style.backgroundColor = spot.color;
@@ -525,24 +570,21 @@
         detailImg.src = spot.imageName;
         detailImgFallback.style.display = 'none';
         detailImgFallback.innerHTML = spot.id;
-        
         detailTitle.innerHTML = spot.title;
         detailSubtitle.innerHTML = spot.subtitle;
 
         homePage.classList.remove('page-active');
         homePage.classList.add('page-hidden-left');
-        
         detailPage.classList.remove('page-hidden-right');
         detailPage.classList.add('page-active');
     }
 
     function navigateBack() {
         clearTypingTimeouts();
+        stopTypingSound(); 
         isTyping = false;
-        
         detailPage.classList.remove('page-active');
         detailPage.classList.add('page-hidden-right');
-        
         homePage.classList.remove('page-hidden-left');
         homePage.classList.add('page-active');
     }
@@ -551,10 +593,7 @@
         initAudio();
         interactionZone.style.display = 'none';
         storyContainer.classList.add('revealed');
-        
-        setTimeout(() => {
-            startTypewriter(currentStoryHtml);
-        }, 300);
+        setTimeout(() => { startTypewriter(currentStoryHtml); }, 300);
     }
 
     function clearTypingTimeouts() {
@@ -565,27 +604,17 @@
     function startTypewriter(html) {
         isTyping = true;
         storyText.innerHTML = '';
+        startTypingSound(); 
         
         let tokens = html.match(/(<.*?>|[^<]+)/g); 
-        if(!tokens) {
-            onTypewriterComplete();
-            return;
-        }
+        if(!tokens) { onTypewriterComplete(); return; }
         
-        let tokenIndex = 0;
-        let charIndex = 0;
-        let currentHtml = '';
-        
-        // 타이핑 속도를 이전처럼 조금 더 빠르게 수정 (65 -> 30)
+        let tokenIndex = 0, charIndex = 0, currentHtml = '';
         const baseTypingSpeed = 30; 
 
         function type() {
             if (!isTyping) return;
-
-            if (tokenIndex >= tokens.length) {
-                onTypewriterComplete();
-                return;
-            }
+            if (tokenIndex >= tokens.length) { onTypewriterComplete(); return; }
 
             let token = tokens[tokenIndex];
             if (token.startsWith('<')) {
@@ -595,31 +624,19 @@
                 type(); 
             } else {
                 if (charIndex < token.length) {
-                    const char = token.charAt(charIndex);
-                    currentHtml += char;
-
-                    if (char.trim() !== '') {
-                        playTypeClickSound();
-                    }
-
+                    currentHtml += token.charAt(charIndex);
                     storyText.innerHTML = currentHtml + '<span class="inline-block w-1 h-4 ml-0.5 align-middle bg-gray-500 animate-pulse"></span>'; 
                     charIndex++;
-                    
                     const scrollArea = document.querySelector('.scrollable-area');
                     if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
                     
-                    // 불규칙한 리듬감 지연시간도 약간 줄임 (40 -> 20)
                     const humanizeDelay = Math.floor(Math.random() * 20);
-                    let timeoutId = setTimeout(type, baseTypingSpeed + humanizeDelay);
-                    typeTimeouts.push(timeoutId);
+                    typeTimeouts.push(setTimeout(type, baseTypingSpeed + humanizeDelay));
                 } else {
-                    charIndex = 0;
-                    tokenIndex++;
-                    type();
+                    charIndex = 0; tokenIndex++; type();
                 }
             }
         }
-        
         type();
     }
 
@@ -627,9 +644,9 @@
         if (isTyping) {
             isTyping = false;
             clearTypingTimeouts();
+            stopTypingSound(); 
             storyText.innerHTML = currentStoryHtml;
             onTypewriterComplete();
-            
             setTimeout(() => {
                 const scrollArea = document.querySelector('.scrollable-area');
                 if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
@@ -639,13 +656,11 @@
 
     function onTypewriterComplete() {
         isTyping = false;
+        stopTypingSound(); 
         storyText.classList.remove('cursor-pointer');
         storyText.title = "";
         storyText.innerHTML = currentStoryHtml; 
         
-        // (삭제됨) 텍스트를 다 읽어도 자동으로 다음 스팟이 해제되지 않도록 로직 제거. 
-        // 다음 스팟은 오직 NFC 태그 스캔으로만 열립니다.
-
         if (currentSpotIndex < tourData.length - 1) {
             nextSpotBtn.style.display = 'flex';
             nextSpotBtn.style.opacity = '0';
@@ -667,20 +682,51 @@
 
     function goToNextSpot() {
         if (currentSpotIndex < tourData.length - 1) {
-            // 이미 다음 장소가 열려있는 경우 (마스터 코드를 썼거나, 이미 다녀왔던 곳일 때)
             if (currentSpotIndex + 1 <= unlockedSpotIndex) {
                 detailPage.style.opacity = '0';
-                
                 setTimeout(() => {
                     openDetail(currentSpotIndex + 1);
                     detailPage.style.opacity = '1';
                 }, 300);
             } else {
-                // 아직 안 열렸을 때 (일반적인 진행 상황)
                 alert("다음 장소로 이동하여 NFC 태그를 스캔해주세요! 🐾");
             }
         }
     }
+
+    // --- 4. Modal 로직 (NFC & MAP) ---
+    function openNFCGuide() {
+        document.getElementById('nfc-modal').classList.remove('hidden');
+        document.getElementById('nfc-modal').classList.add('flex');
+    }
+    function closeNFCGuide() {
+        document.getElementById('nfc-modal').classList.add('hidden');
+        document.getElementById('nfc-modal').classList.remove('flex');
+    }
+
+    function openMap() {
+        document.getElementById('map-modal').classList.remove('hidden');
+        document.getElementById('map-modal').classList.add('flex');
+        // 모달 열 때 스크롤 위치를 살짝 조절하여 가운데 즈음 보이게 설정 가능
+    }
+    function closeMap() {
+        document.getElementById('map-modal').classList.add('hidden');
+        document.getElementById('map-modal').classList.remove('flex');
+    }
+
+    let mapZoomLevel = 100; // 초기 줌 (100%)
+    function zoomMap(direction) {
+        const mapWrapper = document.getElementById('map-zoom-wrapper');
+        
+        if (direction === 'in') {
+            mapZoomLevel = Math.min(300, mapZoomLevel + 50); // 최대 300%
+        } else if (direction === 'out') {
+            mapZoomLevel = Math.max(100, mapZoomLevel - 50); // 최소 100%
+        }
+        
+        mapWrapper.style.width = `${mapZoomLevel}%`;
+    }
+
 </script>
 
 </body>
