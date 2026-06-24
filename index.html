@@ -101,6 +101,16 @@
         #map-zoom-wrapper {
             transition: width 0.3s ease-out;
         }
+
+        /* 펄싱 핀포인트 마커용 부드러운 애니메이션 정의 */
+        @keyframes map-pulse {
+            0% { r: 10px; opacity: 0.7; }
+            50% { r: 24px; opacity: 0.2; }
+            100% { r: 10px; opacity: 0.7; }
+        }
+        .map-pulse-effect {
+            animation: map-pulse 2s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -305,7 +315,7 @@
 <div id="confirm-modal" class="fixed inset-0 z-50 bg-black bg-opacity-60 hidden justify-center items-center p-4 backdrop-blur-sm">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative">
         <h3 class="text-lg font-bold text-gray-900 mb-2 text-center" id="confirm-title">알림</h3>
-        <p class="text-sm text-gray-600 mb-6 text-center break-keep" id="confirm-message">내용</p>
+        <p class="text-sm text-gray-600 mb-6 text-center break-keep leading-relaxed" id="confirm-message">내용</p>
         <div class="flex gap-3">
             <button onclick="closeConfirmModal(false)" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm" id="confirm-cancel-btn">취소</button>
             <button onclick="closeConfirmModal(true)" class="flex-1 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-black transition-colors text-sm" id="confirm-ok-btn">확인</button>
@@ -357,8 +367,8 @@
             <!-- Polyline SVG Overlay -->
             <!-- viewBox를 이미지 규격인 0 0 1520.15 947.23 로 최적화 -->
             <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1520.15 947.23" preserveAspectRatio="none">
-                <g id="dynamic-map-path-group" stroke="#ef4444" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round" opacity="0.85">
-                    <!-- Lines injected here dynamically via scale calculation -->
+                <g id="dynamic-map-path-group" stroke="#ef4444" stroke-width="8" fill="none" stroke-linejoin="round" stroke-linecap="round" opacity="0.85">
+                    <!-- Lines and pulsating pinpoint injected here dynamically via scale calculation -->
                 </g>
             </svg>
         </div>
@@ -375,7 +385,11 @@
 <script>
     // --- 1. 상태 및 오디오 변수 ---
     let currentSpotIndex = 0;
-    let unlockedSpotIndex = parseInt(localStorage.getItem('snoopyUnlockedSpot') || '-1'); 
+    
+    // [NFC 순차 조건 수정]: 기본적으로 unlockedSpotIndex는 0(Spot 1 오픈 상태)으로 시작합니다.
+    // 처음 앱에 진입하면 Spot 1과 1번 노선은 기본적으로 활성화되어 있으며, 바로 상세보기가 가능합니다.
+    let unlockedSpotIndex = parseInt(localStorage.getItem('snoopyUnlockedSpot') || '0'); 
+    
     let isTyping = false; 
     let typeTimeouts = [];
     let currentStoryHtml = "";
@@ -452,7 +466,7 @@
 
     function openConfirmModal(title, msg, onConfirm, hasCancel = true) {
         document.getElementById('confirm-title').innerText = title;
-        document.getElementById('confirm-message').innerText = msg;
+        document.getElementById('confirm-message').innerHTML = msg.replace(/\n/g, '<br>');
         
         const cancelBtn = document.getElementById('confirm-cancel-btn');
         if (hasCancel) {
@@ -535,9 +549,10 @@
         const spotParam = urlParams.get('spot');
 
         if (spotParam) {
-            const targetIndex = parseInt(spotParam) - 1; 
+            const targetIndex = parseInt(spotParam) - 1; // spot=1 이면 index=0
             
             if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < tourData.length) {
+                // 사용자가 순서대로 진행 중이거나, 건너뛰기로 바로 이전 것까지 순서상 허용 범위 내인 경우
                 if (targetIndex <= unlockedSpotIndex + 1) {
                     if (targetIndex > unlockedSpotIndex) {
                         unlockedSpotIndex = targetIndex;
@@ -560,7 +575,7 @@
         openConfirmModal("진행 초기화", "진행 상황을 모두 초기화 하시겠습니까? 처음부터 다시 탐험을 시작하게 됩니다.", (confirmed) => {
             if (confirmed) {
                 localStorage.removeItem('snoopyUnlockedSpot');
-                unlockedSpotIndex = -1; 
+                unlockedSpotIndex = 0; // 0으로 리셋하여 Spot 1과 1번 노선은 기본 오픈 유지
                 initList();
                 showToast("진행이 초기화되었습니다.", "info");
             }
@@ -634,19 +649,92 @@
     }
 
     // 해제된 레벨만큼 수학적으로 1520.15 × 947.23 비율 변환한 선을 동적으로 맵에 오버레이
+    // 동시에 마지막 동선 끝점에 펄싱하는 핀포인트를 동적으로 생성합니다.
     function updateDynamicMapPath() {
         const pathGroup = document.getElementById('dynamic-map-path-group');
         if (!pathGroup) return;
         
         pathGroup.innerHTML = ''; 
         
+        let lastX = null;
+        let lastY = null;
+        
         for (let i = 0; i <= unlockedSpotIndex; i++) {
             if (rawMapPaths[i]) {
                 const scaledPoints = scalePoints(rawMapPaths[i]);
+                
                 const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
                 polyline.setAttribute("points", scaledPoints);
+                polyline.setAttribute("stroke", "#ef4444");
+                polyline.setAttribute("stroke-width", "8");
+                polyline.setAttribute("stroke-linecap", "round");
+                polyline.setAttribute("stroke-linejoin", "round");
+                polyline.setAttribute("fill", "none");
+                
                 pathGroup.appendChild(polyline);
+                
+                // 마지막으로 해제된 패스의 끝점을 마커 생성 좌표로 저장
+                if (i === unlockedSpotIndex) {
+                    const pointsArr = scaledPoints.split(' ');
+                    const lastPoint = pointsArr[pointsArr.length - 1];
+                    if (lastPoint) {
+                        const coords = lastPoint.split(',');
+                        lastX = parseFloat(coords[0]);
+                        lastY = parseFloat(coords[1]);
+                    }
+                }
             }
+        }
+        
+        // [핀포인트 기능 추가]: 최종 동선 끝에 깜빡이는 핀포인트 마커를 얹고 클릭 이벤트를 바인딩합니다.
+        if (lastX !== null && lastY !== null) {
+            // 1. 펄스 레이더 애니메이션 동그라미 생성
+            const radarCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            radarCircle.setAttribute("cx", lastX);
+            radarCircle.setAttribute("cy", lastY);
+            radarCircle.setAttribute("r", "16");
+            radarCircle.setAttribute("fill", "#ef4444");
+            radarCircle.setAttribute("class", "map-pulse-effect");
+            pathGroup.appendChild(radarCircle);
+            
+            // 2. 메인 핀 아이콘 그룹 생성
+            const pinGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            pinGroup.setAttribute("transform", `translate(${lastX}, ${lastY})`);
+            pinGroup.setAttribute("class", "cursor-pointer pointer-events-auto select-none");
+            
+            // 핀 터치/클릭 시 안내창 노출
+            pinGroup.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const nextSpotNum = unlockedSpotIndex + 1;
+                if (nextSpotNum <= tourData.length) {
+                    openConfirmModal(
+                        "📍 목적지 가이드", 
+                        `이곳은 [Spot ${nextSpotNum}. ${tourData[nextSpotNum - 1].title}] 입니다!\n\n주변에 설치된 도슨트 팻말의 NFC 마크에 스마트폰을 가볍게 태그하면 신나고 유익한 피너츠 에피소드가 열립니다! 🐾`, 
+                        () => {}, 
+                        false
+                    );
+                } else {
+                    openConfirmModal("🎉 완주 축하!", "스누피가든 야외가든의 모든 도슨트 에피소드를 탐험 완료하셨습니다!", () => {}, false);
+                }
+            });
+            
+            // 핀 모양 패스
+            const pinShape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pinShape.setAttribute("d", "M0 0 C-10 -12 -15 -22 -15 -32 C-15 -44 -8 -52 0 -52 C8 -52 15 -44 15 -32 C15 -22 10 -12 0 0 Z");
+            pinShape.setAttribute("fill", "#ef4444");
+            pinShape.setAttribute("stroke", "#ffffff");
+            pinShape.setAttribute("stroke-width", "3.5");
+            
+            // 핀 내부 장식 원
+            const pinDecor = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            pinDecor.setAttribute("cx", "0");
+            pinDecor.setAttribute("cy", "-32");
+            pinDecor.setAttribute("r", "5");
+            pinDecor.setAttribute("fill", "#ffffff");
+            
+            pinGroup.appendChild(pinShape);
+            pinGroup.appendChild(pinDecor);
+            pathGroup.appendChild(pinGroup);
         }
     }
 
@@ -789,28 +877,37 @@
         
         setTimeout(() => {
              const scrollArea = document.querySelector('.scrollable-area');
-             if(scrollArea) scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+             if(scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
         }, 100);
     }
 
+    // [다음 장소 터치 시 흐름 가이드 최적화]:
+    // 상세 화면을 닫고, 지도를 자동으로 전개한 뒤 가이드 팝업을 띄워 자연스러운 동선을 만듭니다.
     function goToNextSpot() {
-        if (currentSpotIndex < tourData.length - 1) {
-            if (currentSpotIndex + 1 <= unlockedSpotIndex) {
-                detailPage.style.opacity = '0';
-                setTimeout(() => {
-                    openDetail(currentSpotIndex + 1);
-                    detailPage.style.opacity = '1';
-                }, 300);
-            } else {
-                openConfirmModal("NFC 태그 필요", "다음 장소로 이동하여 NFC 태그를 스캔해주세요! 🐾", () => {}, false);
-            }
-        } else {
-            detailPage.style.opacity = '0';
+        navigateBack(); // 먼저 도슨트 목록 페이지로 나가기
+        
+        setTimeout(() => {
+            openMap(); // 지도 모달 자동 노출
+            
             setTimeout(() => {
-                openDetail(0);
-                detailPage.style.opacity = '1';
-            }, 300);
-        }
+                const nextSpotNum = currentSpotIndex + 2; // spot index + 2 가 물리적인 번호
+                if (nextSpotNum <= tourData.length) {
+                    openConfirmModal(
+                        "🐾 길찾기 안내", 
+                        `다음 목적지는 [Spot ${nextSpotNum}. ${tourData[nextSpotNum - 1].title}] 입니다!\n\n지도에 새롭게 활성화된 빨간색 라인 끝에 반짝이는 핀포인트를 따라 이동해 보세요.\n그곳에 놓인 팻말의 NFC 마크를 스마트폰으로 가볍게 스캔하면 에피소드를 열어볼 수 있습니다!`, 
+                        () => {}, 
+                        false
+                    );
+                } else {
+                    openConfirmModal(
+                        "🎉 야외 정복 완료!", 
+                        "축하합니다! 마지막 구역까지 무사히 모든 야외 탐험을 정복하셨습니다. 첫 번째 광장으로 돌아가 언제든 이야기를 다시 살펴볼 수 있습니다.", 
+                        () => {}, 
+                        false
+                    );
+                }
+            }, 550);
+        }, 450);
     }
 
     // --- 6. Modal 로직 (NFC & MAP) ---
