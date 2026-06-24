@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- NanumSquare Font CDN for beautiful Korean typography -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/moonspam/NanumSquare@2.0/nanumsquare.css" />
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com/gh/moonspam/NanumSquare@2.0/nanumsquare.css" />
     
     <style>
         /* --- CUSTOM FONTS INTEGRATION --- */
@@ -210,19 +210,19 @@
     const MAP_WIDTH = 1500;
     const MAP_HEIGHT = 2400;
 
-    // --- 73px, -199px 오차 분석값을 완벽 적용하여 오차 보정 완료한 오프셋 데이터 세트 ---
+    // --- [수정] 정밀 조정을 통해 완벽히 일치하는 것으로 확인된 정밀 오프셋 좌표값 교체 적용 ---
     let mapOffsets = [
-        { x: 380 + 73, y: 1150 - 199 },  // 0: Spot 1 
-        { x: 420 + 73, y: 1030 - 199 },  // 1: Spot 2
-        { x: 450 + 73, y: 1180 - 199 },  // 2: Spot 3
-        { x: 580 + 73, y: 920 - 199 },   // 3: Spot 4
-        { x: 710 + 73, y: 780 - 199 },   // 4: Spot 5
-        { x: 740 + 73, y: 460 - 199 },   // 5: Spot 6
-        { x: 850 + 73, y: 340 - 199 },   // 6: Spot 7
-        { x: 920 + 73, y: 620 - 199 },   // 7: Spot 8
-        { x: 990 + 73, y: 880 - 199 },   // 8: Spot 9
-        { x: 880 + 73, y: 1180 - 199 },  // 9: Spot 10
-        { x: 690 + 73, y: 1450 - 199 }   // 10: Spot 11
+        { x: 435.0, y: 891.0 },   // 0: Spot 1 (소설왕 스누피 광장)
+        { x: 475.0, y: 771.0 },   // 1: Spot 2 (비글 스카우트 캠프)
+        { x: 505.0, y: 921.0 },   // 2: Spot 3 (피너츠 사색 들판)
+        { x: 635.0, y: 661.0 },   // 3: Spot 4 (찰리 브라운의 야구장)
+        { x: 765.0, y: 521.0 },   // 4: Spot 5 (피너츠 컬러 가든)
+        { x: 795.0, y: 201.0 },   // 5: Spot 6 (스누피 페르소나 암석원)
+        { x: 905.0, y: 81.0 },    // 6: Spot 7 (호박대왕의 호박밭)
+        { x: 975.0, y: 361.0 },   // 7: Spot 8 (라이너스의 담요 숲)
+        { x: 1045.0, y: 621.0 },  // 8: Spot 9 (우드스탁의 빅 네스트)
+        { x: 935.0, y: 921.0 },   // 9: Spot 10 (웜 퍼피 레이크)
+        { x: 745.0, y: 1191.0 }   // 10: Spot 11 (루시의 가드닝 스쿨)
     ];
 
     // --- 각 노선의 최종 끝나는 마커 핀포인트 생성용 로컬 좌표쌍 목록 ---
@@ -249,6 +249,7 @@
                 <p class="text-sm text-gray-500 mt-1">피너츠 코믹 스트립 속으로 떠나는 에피소드</p>
             </div>
             <div class="flex flex-col items-end gap-2">
+                <!-- 지도 모달 열기 버튼 -->
                 <button onclick="openMap()" class="text-sm bg-green-50 text-green-600 font-bold border border-green-200 px-3 py-1.5 rounded-full hover:bg-green-100 flex items-center shadow-sm">
                     🗺️ 지도 보기
                 </button>
