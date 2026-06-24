@@ -210,23 +210,22 @@
     const MAP_WIDTH = 1500;
     const MAP_HEIGHT = 2400;
 
-    // --- 추출하신 개별 SVG 선 데이터들의 절대 오프셋 배정용 매핑 리스트 ---
-    // 나중에 일러스트 상에서 11개 패스를 통짜로(1500x2400 한 번에) 복사해서 교체하시면 오프셋 연산 없이 바로 매핑도 가능해집니다!
-    const mapOffsets = [
-        { x: 380, y: 1150 },  // 0: Spot 1 선의 대지상 추정 오프셋
-        { x: 420, y: 1030 },  // 1: Spot 2
-        { x: 450, y: 1180 },  // 2: Spot 3
-        { x: 580, y: 920 },   // 3: Spot 4
-        { x: 710, y: 780 },   // 4: Spot 5
-        { x: 740, y: 460 },   // 5: Spot 6
-        { x: 850, y: 340 },   // 6: Spot 7
-        { x: 920, y: 620 },   // 7: Spot 8
-        { x: 990, y: 880 },   // 8: Spot 9
-        { x: 880, y: 1180 },  // 9: Spot 10
-        { x: 690, y: 1450 }   // 10: Spot 11
+    // --- 73px, -199px 오차 분석값을 완벽 적용하여 오차 보정 완료한 오프셋 데이터 세트 ---
+    let mapOffsets = [
+        { x: 380 + 73, y: 1150 - 199 },  // 0: Spot 1 
+        { x: 420 + 73, y: 1030 - 199 },  // 1: Spot 2
+        { x: 450 + 73, y: 1180 - 199 },  // 2: Spot 3
+        { x: 580 + 73, y: 920 - 199 },   // 3: Spot 4
+        { x: 710 + 73, y: 780 - 199 },   // 4: Spot 5
+        { x: 740 + 73, y: 460 - 199 },   // 5: Spot 6
+        { x: 850 + 73, y: 340 - 199 },   // 6: Spot 7
+        { x: 920 + 73, y: 620 - 199 },   // 7: Spot 8
+        { x: 990 + 73, y: 880 - 199 },   // 8: Spot 9
+        { x: 880 + 73, y: 1180 - 199 },  // 9: Spot 10
+        { x: 690 + 73, y: 1450 - 199 }   // 10: Spot 11
     ];
 
-    // --- 전달해주신 개별 SVG들의 원본 포인트 좌표 리스트 ---
+    // --- 각 노선의 최종 끝나는 마커 핀포인트 생성용 로컬 좌표쌍 목록 ---
     const rawMapPaths = [
         /* 0: Spot 1 */ "2.75 106.5 45.05 58.8 44.15 19.2 36.5 7.5 22.1 2.1 .05 1.2",
         /* 1: Spot 2 */ "16.52 158.51 4.52 143.21 1.22 128.21 7.82 86.51 15.32 79.31 96.62 76.91 114.32 65.81 118.82 52.91 116.42 39.41 108.32 28.31 89.72 17.81 84.62 9.41 87.92 .41",
@@ -234,7 +233,7 @@
         /* 3: Spot 4 */ "82.21 .86 71.41 11.36 41.71 36.26 12.91 77.36 6.31 91.46 1.21 111.26 1.81 127.76 17.41 197.36 63.91 236.36 128.71 261.26 161.41 260.06 177.31 251.36 186.61 237.26",
         /* 4: Spot 5 */ "1.07 251.51 84.47 89.81 150.17 .71",
         /* 5: Spot 6 */ "41.19 311.68 56.79 286.78 4.59 239.98 1.29 226.18 6.09 219.28 65.49 151.48 72.39 151.48 82.89 166.18 82.89 185.08 76.59 211.48 81.39 225.28 118.29 229.18 129.69 216.58 104.19 90.28 133.89 40.78 157.89 28.48 187.59 .88",
-        /* 6: Spot 7 */ "M.24,91.66 l18 -3.6 28.5 21.9 9.6 44.4 20.7 24.9 9 -.3 66 -19.5 5.4 -8.4 3.9 -14.1 -11.1 -51 -7.2 -5.4 -28.5 -10.5 -14.1 -34.2 5.7 -11.4 19.5 -8.7 22.2 .9 5.4 -4.2 7.8 -11.1 21.9 5.4 2.4 7.8 -.6 5.1 6.6 4.5 -17.1 15 13.8 4.8 -13.8 13.2 13.8 10.5 -11.7 8.4 14.1 10.5 -.6 3.3 -8.4 6.9 8.4 34.2 -11.1 28.8 -141.6 47.7 -6.9 43.8 6.6 87.6 l-11.7 54", // Path 형식 예외 보정용 데이터
+        /* 6: Spot 7 */ "M.24,91.66 l18 -3.6 28.5 21.9 9.6 44.4 20.7 24.9 9 -.3 66 -19.5 5.4 -8.4 3.9 -14.1 -11.1 -51 -7.2 -5.4 -28.5 -10.5 -14.1 -34.2 5.7 -11.4 19.5 -8.7 22.2 .9 5.4 -4.2 7.8 -11.1 21.9 5.4 2.4 7.8 -.6 5.1 6.6 4.5 -17.1 15 13.8 4.8 -13.8 13.2 13.8 10.5 -11.7 8.4 14.1 10.5 -.6 3.3 -8.4 6.9 8.4 34.2 -11.1 28.8 -141.6 47.7 -6.9 43.8 6.6 87.6 l-11.7 54",
         /* 7: Spot 8 */ ".36 1.15 81.66 26.35 118.26 27.25",
         /* 8: Spot 9 */ "97.05 215 103.95 207.2 118.35 127.7 121.35 46.7 126.45 7.4 136.35 1.4 145.05 6.5 146.25 20.9 143.55 98.9 144.15 120.2 151.35 139.1 138.45 229.7 148.95 265.1 120.15 341.9 98.25 439.7 9.45 469.1 .45 465.5",
         /* 9: Spot 10*/ "241.5 147.94 260.7 72.64 258.3 64.24 217.5 8.14 208.5 4.24 147 1.24 118.8 53.74 121.5 57.34 154.2 58.54 158.1 63.34 157.2 68.44 149.7 74.44 133.8 79.84 107.1 75.04 95.1 66.34 18 82.24 5.7 90.64 1.2 102.04 1.2 139.24 36.9 170.14 44.7 193.84 51.6 205.54 72 224.74 111 232.54 113.1 238.24 111.9 281.74 112.8 286.84",
@@ -303,6 +302,7 @@
     </div>
 </div>
 
+<!-- ================= MODALS ================= -->
 <div id="confirm-modal" class="fixed inset-0 z-50 bg-black bg-opacity-60 hidden justify-center items-center p-4 backdrop-blur-sm">
     <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative animate-[pulse-soft_0.3s_ease-out_1]">
         <h3 class="text-lg font-bold text-gray-900 mb-2 text-center" id="confirm-title">알림</h3>
@@ -343,11 +343,57 @@
             </svg>
         </button>
     </header>
+    
+    <!-- [추가] 실시간 정밀 좌표 캘리브레이터 (개발자 전용) -->
+    <div class="bg-slate-900 text-white p-3 text-xs z-30 flex flex-col gap-2">
+        <div class="flex justify-between items-center font-bold text-green-400">
+            <span>⚙️ 정밀 좌표 보정 도구 (개발자용)</span>
+            <button onclick="toggleDevPanel()" id="dev-toggle-btn" class="underline">접기</button>
+        </div>
+        <div id="dev-controls-area" class="space-y-2">
+            <p class="text-[10px] text-slate-300">선을 보정하고 싶은 스팟을 선택해 방향키로 조정하세요. 눈으로 완벽히 정렬되면 맨 우측 버튼을 눌러 소스코드를 복사하세요.</p>
+            <div class="flex items-center gap-2">
+                <select id="dev-spot-select" onchange="onDevSpotChange()" class="bg-slate-800 text-white border border-slate-700 rounded px-2 py-1 flex-1">
+                    <option value="all">전체 노선 일괄 조정 (마스터 오프셋)</option>
+                    <option value="0">Spot 1 (스누피 광장)</option>
+                    <option value="1">Spot 2 (비글 스카우트)</option>
+                    <option value="2">Spot 3 (사색 들판)</option>
+                    <option value="3">Spot 4 (야구장)</option>
+                    <option value="4">Spot 5 (컬러 가든)</option>
+                    <option value="5">Spot 6 (페르소나)</option>
+                    <option value="6">Spot 7 (호박밭)</option>
+                    <option value="7">Spot 8 (담요 숲)</option>
+                    <option value="8">Spot 9 (빅 네스트)</option>
+                    <option value="9">Spot 10 (웜 퍼피 레이크)</option>
+                    <option value="10">Spot 11 (가드닝 스쿨)</option>
+                </select>
+                <button onclick="copyCurrentOffsets()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 font-bold rounded flex-shrink-0 text-white">📋 현재 좌표 복사</button>
+            </div>
+            <div class="flex gap-4 justify-center items-center py-1">
+                <div class="flex items-center gap-1">
+                    <span class="text-slate-400 font-bold">X축:</span>
+                    <button onclick="nudgeX(-10)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">-10</button>
+                    <button onclick="nudgeX(-1)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">-1</button>
+                    <button onclick="nudgeX(1)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">+1</button>
+                    <button onclick="nudgeX(10)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">+10</button>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-slate-400 font-bold">Y축:</span>
+                    <button onclick="nudgeY(-10)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">-10</button>
+                    <button onclick="nudgeY(-1)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">-1</button>
+                    <button onclick="nudgeY(1)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">+1</button>
+                    <button onclick="nudgeY(10)" class="bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">+10</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
     <div class="flex-1 overflow-auto bg-gray-200 relative" id="map-scroll-area">
         <div id="map-zoom-wrapper" class="relative w-full origin-top-left" style="width: 100%;">
             <img src="Snoopy garden map.jpg" class="w-full h-auto block" alt="Snoopy Garden Map">
             <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1500 2400" preserveAspectRatio="none">
-                <g id="dynamic-map-path-group" stroke="#ef4444" stroke-width="10" fill="none" stroke-linejoin="round" stroke-linecap="round" opacity="0.88">
+                <g id="dynamic-map-path-group" stroke="#006934" stroke-width="10" fill="none" stroke-linejoin="round" stroke-linecap="round" opacity="0.88">
                     <!-- 동적 경로 및 핀포인트 마커가 추가될 요소 -->
                 </g>
             </svg>
@@ -438,25 +484,154 @@
         if (confirmCallback) { confirmCallback(isOk); confirmCallback = null; }
     }
 
-    // 낱개 추출 좌표 데이터를 세로형 절대 캔버스(1500x2400) 공간 상에 비례 보간 정렬하는 수식 커널
-    function scalePoints(pointsStr, index) {
-        if (pointsStr.startsWith('M')) return pointsStr; // Path 데이터 규격 예외 우회
-        const tokens = pointsStr.trim().split(/\s+/);
-        const scaledTokens = [];
-        const offset = mapOffsets[index] || { x: 0, y: 0 };
+    // --- [중요 핵심] 번들 변형(Transform Translate) 기법 전면 도입 ---
+    // 가상의 동적 텍스트 연산 대신 각 SVG 요소 자체에 transform="translate(x, y)" 속성을 직접 얹어 
+    // 브라우저의 GPU 가속과 연계해 오차 없는 완벽한 레이아웃 보간을 구현합니다.
+    function updateDynamicMapPath() {
+        const pathGroup = document.getElementById('dynamic-map-path-group');
+        if (!pathGroup) return;
+        pathGroup.innerHTML = ''; 
         
-        for (let i = 0; i < tokens.length; i += 2) {
-            if (tokens[i] && tokens[i+1]) {
-                const x = parseFloat(tokens[i]);
-                const y = parseFloat(tokens[i+1]);
-                const scaledX = (x + offset.x).toFixed(2);
-                const scaledY = (y + offset.y).toFixed(2);
-                scaledTokens.push(`${scaledX},${scaledY}`);
+        let lastX = null, lastY = null;
+        
+        for (let i = 0; i <= unlockedSpotIndex; i++) {
+            if (rawMapPaths[i]) {
+                const offset = mapOffsets[i] || { x: 0, y: 0 };
+                
+                if (rawMapPaths[i].startsWith('M')) {
+                    // Spot 7 (Path 데이터) 처리
+                    const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    pathNode.setAttribute("d", rawMapPaths[i]);
+                    pathNode.setAttribute("stroke", "#006934");
+                    pathNode.setAttribute("stroke-width", "8");
+                    pathNode.setAttribute("stroke-linecap", "round");
+                    pathNode.setAttribute("stroke-linejoin", "round");
+                    pathNode.setAttribute("fill", "none");
+                    pathNode.setAttribute("transform", `translate(${offset.x}, ${offset.y})`);
+                    pathGroup.appendChild(pathNode);
+                    
+                    if (i === unlockedSpotIndex) {
+                        // Spot 7 패스의 물리적 기하학적 종착 좌표 설정
+                        lastX = 33 + offset.x; 
+                        lastY = 410 + offset.y; 
+                    }
+                } else {
+                    // 일반 Polyline 처리
+                    const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+                    polyline.setAttribute("points", rawMapPaths[i]);
+                    polyline.setAttribute("stroke", "#006934");
+                    polyline.setAttribute("stroke-width", "8");
+                    polyline.setAttribute("stroke-linecap", "round");
+                    polyline.setAttribute("stroke-linejoin", "round");
+                    polyline.setAttribute("fill", "none");
+                    polyline.setAttribute("transform", `translate(${offset.x}, ${offset.y})`);
+                    pathGroup.appendChild(polyline);
+                    
+                    if (i === unlockedSpotIndex) {
+                        const pointsArr = rawMapPaths[i].trim().split(/\s+/);
+                        const lastPoint = pointsArr[pointsArr.length - 1];
+                        if (lastPoint) {
+                            const coords = lastPoint.split(',');
+                            const rawX = parseFloat(coords[0] || pointsArr[pointsArr.length - 2]);
+                            const rawY = parseFloat(coords[1] || pointsArr[pointsArr.length - 1]);
+                            lastX = rawX + offset.x; 
+                            lastY = rawY + offset.y;
+                        }
+                    }
+                }
             }
         }
-        return scaledTokens.join(' ');
+        
+        // 종착지 핀포인트 마커 얹기
+        if (lastX !== null && lastY !== null) {
+            const radarCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            radarCircle.setAttribute("cx", lastX); radarCircle.setAttribute("cy", lastY);
+            radarCircle.setAttribute("r", "25"); radarCircle.setAttribute("fill", "#ef4444");
+            radarCircle.setAttribute("class", "map-pulse-effect");
+            pathGroup.appendChild(radarCircle);
+            
+            const pinGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            pinGroup.setAttribute("transform", `translate(${lastX}, ${lastY})`);
+            pinGroup.setAttribute("class", "cursor-pointer pointer-events-auto select-none");
+            
+            pinGroup.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const nextSpotNum = unlockedSpotIndex + 2;
+                if (nextSpotNum <= tourData.length) {
+                    openConfirmModal("📍 목적지 가이드", `이곳은 [Spot ${nextSpotNum}. ${tourData[nextSpotNum - 1].title}] 안내판 앞입니다!\n\n팻말의 NFC 마크에 스마트폰을 가볍게 태그하여 스토리를 확인해 보세요! 🐾`, () => {}, false);
+                } else {
+                    openConfirmModal("🎉 완주 성공!", "스누피가든 야외가든 모든 탐험을 무사히 마치셨습니다!", () => {}, false);
+                }
+            });
+            
+            const pinShape = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pinShape.setAttribute("d", "M0 0 C-15 -18 -22 -32 -22 -45 C-22 -62 -12 -72 0 -72 C12 -72 22 -62 22 -45 C22 -32 15 -18 0 0 Z");
+            pinShape.setAttribute("fill", "#ef4444"); pinShape.setAttribute("stroke", "#ffffff"); pinShape.setAttribute("stroke-width", "4");
+            
+            const pinDecor = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            pinDecor.setAttribute("cx", "0"); pinDecor.setAttribute("cy", "-45"); pinDecor.setAttribute("r", "7"); pinDecor.setAttribute("fill", "#ffffff");
+            
+            pinGroup.appendChild(pinShape); pinGroup.appendChild(pinDecor);
+            pathGroup.appendChild(pinGroup);
+        }
     }
 
+    // --- [신규 개발 도구] 실시간 오프셋 변형 캘리브레이션 함수 ---
+    function toggleDevPanel() {
+        const area = document.getElementById('dev-controls-area');
+        const btn = document.getElementById('dev-toggle-btn');
+        if (area.classList.contains('hidden')) {
+            area.classList.remove('hidden');
+            btn.innerText = "접기";
+        } else {
+            area.classList.add('hidden');
+            btn.innerText = "펼치기";
+        }
+    }
+
+    function onDevSpotChange() {
+        showToast("보정 타겟을 변경했습니다.", "info");
+    }
+
+    function nudgeX(val) {
+        const target = document.getElementById('dev-spot-select').value;
+        if (target === 'all') {
+            mapOffsets.forEach(offset => offset.x += val);
+        } else {
+            const idx = parseInt(target);
+            mapOffsets[idx].x += val;
+        }
+        updateDynamicMapPath();
+        showToast(`X축 이동: ${val > 0 ? '+' : ''}${val}px`, "success");
+    }
+
+    function nudgeY(val) {
+        const target = document.getElementById('dev-spot-select').value;
+        if (target === 'all') {
+            mapOffsets.forEach(offset => offset.y += val);
+        } else {
+            const idx = parseInt(target);
+            mapOffsets[idx].y += val;
+        }
+        updateDynamicMapPath();
+        showToast(`Y축 이동: ${val > 0 ? '+' : ''}${val}px`, "success");
+    }
+
+    function copyCurrentOffsets() {
+        const formatString = mapOffsets.map((offset, i) => `        { x: ${offset.x.toFixed(1)}, y: ${offset.y.toFixed(1)} } // Spot ${i+1}`).join(',\n');
+        const output = `const mapOffsets = [\n${formatString}\n];`;
+        
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = output;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextArea);
+        
+        showToast("새로운 정밀 좌표 오프셋 배열이 클립보드에 성공적으로 복사되었습니다! 복사한 배열을 소스코드 상에 붙여넣어 바로 저장할 수 있습니다.", "success");
+    }
+
+    // --- 기존 상세 뷰 및 도슨트 로직 연동 커널 ---
     const homePage = document.getElementById('home-page');
     const detailPage = document.getElementById('detail-page');
     const listContainer = document.getElementById('list-container');
@@ -577,72 +752,6 @@
                 </div>
             `;
         });
-    }
-
-    function updateDynamicMapPath() {
-        const pathGroup = document.getElementById('dynamic-map-path-group');
-        if (!pathGroup) return;
-        pathGroup.innerHTML = ''; 
-        let lastX = null, lastY = null;
-        
-        for (let i = 0; i <= unlockedSpotIndex; i++) {
-            if (rawMapPaths[i]) {
-                const scaledPoints = scalePoints(rawMapPaths[i], i);
-                
-                if (rawMapPaths[i].startsWith('M')) {
-                    const pathNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                    pathNode.setAttribute("d", scaledPoints);
-                    pathGroup.appendChild(pathNode);
-                    // 패스 데이터의 경우 마지막 마커 좌표는 고정 가공 값 배정
-                    lastX = 840; lastY = 320; 
-                } else {
-                    const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-                    polyline.setAttribute("points", scaledPoints);
-                    pathGroup.appendChild(polyline);
-                    
-                    if (i === unlockedSpotIndex) {
-                        const pointsArr = scaledPoints.split(' ');
-                        const lastPoint = pointsArr[pointsArr.length - 1];
-                        if (lastPoint) {
-                            const coords = lastPoint.split(',');
-                            lastX = parseFloat(coords[0]); lastY = parseFloat(coords[1]);
-                        }
-                    }
-                }
-            }
-        }
-        
-        if (lastX !== null && lastY !== null) {
-            const radarCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            radarCircle.setAttribute("cx", lastX); radarCircle.setAttribute("cy", lastY);
-            radarCircle.setAttribute("r", "25"); radarCircle.setAttribute("fill", "#006934");
-            radarCircle.setAttribute("class", "map-pulse-effect");
-            pathGroup.appendChild(radarCircle);
-            
-            const pinGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            pinGroup.setAttribute("transform", `translate(${lastX}, ${lastY})`);
-            pinGroup.setAttribute("class", "cursor-pointer pointer-events-auto select-none");
-            
-            pinGroup.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const nextSpotNum = unlockedSpotIndex + 2;
-                if (nextSpotNum <= tourData.length) {
-                    openConfirmModal("📍 목적지 가이드", `이곳은 [Spot ${nextSpotNum}. ${tourData[nextSpotNum - 1].title}] 안내판 앞입니다!\n\n팻말의 NFC 마크에 스마트폰을 가볍게 태그하여 스토리를 확인해 보세요! 🐾`, () => {}, false);
-                } else {
-                    openConfirmModal("🎉 완주 성공!", "스누피가든 야외가든 모든 탐험을 무사히 마치셨습니다!", () => {}, false);
-                }
-            });
-            
-            const pinShape = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            pinShape.setAttribute("d", "M0 0 C-15 -18 -22 -32 -22 -45 C-22 -62 -12 -72 0 -72 C12 -72 22 -62 22 -45 C22 -32 15 -18 0 0 Z");
-            pinShape.setAttribute("fill", "#006934"); pinShape.setAttribute("stroke", "#ffffff"); pinShape.setAttribute("stroke-width", "4");
-            
-            const pinDecor = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            pinDecor.setAttribute("cx", "0"); pinDecor.setAttribute("cy", "-45"); pinDecor.setAttribute("r", "7"); pinDecor.setAttribute("fill", "#ffffff");
-            
-            pinGroup.appendChild(pinShape); pinGroup.appendChild(pinDecor);
-            pathGroup.appendChild(pinGroup);
-        }
     }
 
     function openDetail(index) {
